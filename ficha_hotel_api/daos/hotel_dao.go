@@ -2,7 +2,6 @@ package daos
 
 import (
 	"context"
-
 	"ficha_hotel_api/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,6 +20,7 @@ func NewHotelDAO(db *mongo.Database) *HotelDAO {
 }
 
 func (dao *HotelDAO) InsertHotel(ctx context.Context, hotel models.Hotel) error {
+	hotel.ID = primitive.NewObjectID().Hex()
 	_, err := dao.collection.InsertOne(ctx, hotel)
 	return err
 }
@@ -31,7 +31,18 @@ func (dao *HotelDAO) DeleteHotel(ctx context.Context, id primitive.ObjectID) err
 }
 
 func (dao *HotelDAO) UpdateHotel(ctx context.Context, id primitive.ObjectID, hotel models.Hotel) error {
-	_, err := dao.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": hotel})
+	update := bson.M{
+		"$set": bson.M{
+			"name":            hotel.Name,
+			"description":     hotel.Description,
+			"photos":          hotel.Photos,
+			"amenities":       hotel.Amenities,
+			"room_count":      hotel.RoomCount,
+			"city":            hotel.City,
+			"available_rooms": hotel.AvailableRooms,
+		},
+	}
+	_, err := dao.collection.UpdateOne(ctx, bson.M{"_id": id}, update)
 	return err
 }
 
