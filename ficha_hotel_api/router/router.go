@@ -11,6 +11,4 @@ func MapUrls(router *gin.Engine, hotelController *controllers.HotelController) {
 	router.POST("/hotel", hotelController.CreateHotel)
 	router.DELETE("/hotel/:id", hotelController.DeleteHotel)
 	router.PUT("/hotel/:id", hotelController.UpdateHotel)
-
-	router.Run(":8080")
 }
