@@ -10,9 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var MongoDb *mongo.Database
 var client *mongo.Client
 
-func InitDB() (*mongo.Database, error) {
+func InitDB() error {
   uri := os.Getenv("MONGODB_URI")
   if uri == "" {
     uri = "mongodb://root:root@localhost:27017"
@@ -22,20 +23,20 @@ func InitDB() (*mongo.Database, error) {
   cli, err := mongo.Connect(context.TODO(), clientOpts)
   client = cli
   if err != nil {
-    return nil, err
+    return err
   }
 
-  db := client.Database("arqui_de_software_2")
+  MongoDb = client.Database("arqui_de_software_2")
 
   dbNames, err := client.ListDatabaseNames(context.TODO(), bson.M{})
   if err != nil {
-    return nil, err
+    return err
   }
 
   fmt.Println("Available databases:")
   fmt.Println(dbNames)
 
-  return db, nil
+  return nil
 }
 
 func DisconnectDB() {

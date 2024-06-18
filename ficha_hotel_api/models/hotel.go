@@ -1,12 +1,14 @@
 package models
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Hotel struct {
-	ID             string   `json:"id" bson:"_id,omitempty"`
-	Name           string   `json:"name" bson:"name"`
-	Description    string   `json:"description" bson:"description"`
-	Photos         []string `json:"photos" bson:"photos"`
-	Amenities      []string `json:"amenities" bson:"amenities"`
-	RoomCount      int      `json:"room_count" bson:"room_count"`
-	City           string   `json:"city" bson:"city"`
-	AvailableRooms int      `json:"available_rooms" bson:"available_rooms"`
+	ID             primitive.ObjectID   `bson:"_id"`
+	Name           string   `bson:"name"`
+	Description    string   `bson:"description"`
+	Photos         []string `bson:"photos"`
+	Amenities      []string `bson:"amenities"`
+	RoomCount      int      `bson:"room_count"`
+	City           string   `bson:"city"`
+	AvailableRooms int      `bson:"available_rooms"`
 }
