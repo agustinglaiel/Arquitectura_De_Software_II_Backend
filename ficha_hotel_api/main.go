@@ -1,35 +1,42 @@
 package main
 
 import (
-	"ficha_hotel_api/controllers"
-	"ficha_hotel_api/daos"
 	"ficha_hotel_api/router"
 	"ficha_hotel_api/services"
 	"ficha_hotel_api/utils/db"
-	"log"
+	"ficha_hotel_api/utils/queue"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	ginRouter *gin.Engine
+)
+
 func main() {
-	// Inicializar la base de datos
+	// Initialize RabbitMQ
+	queue.Init()
+
+	// Initialize the database
 	database, err := db.InitDB()
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		fmt.Println("Cannot init db")
+		fmt.Println(err)
+		return
 	}
 	defer db.DisconnectDB()
 
-	// Inicializar DAO
-	hotelDAO := daos.NewHotelDAO(database)
+	// Initialize Hotel Service
+	hotelService := services.NewHotelService(database)
 
-	// Inicializar Servicio
-	hotelService := services.NewHotelService(hotelDAO)
+	// Initialize the router
+	ginRouter = gin.Default()
+	router.MapUrls(ginRouter, hotelService)
 
-	// Inicializar Controlador
-	hotelController := controllers.NewHotelController(hotelService)
-
-	// Inicializar Router
-	r := gin.Default()
-	router.MapUrls(r, hotelController)
-	r.Run(":8080")
+	// Start the server
+	fmt.Println("Starting server")
+	if err := ginRouter.Run(":8080"); err != nil {
+		fmt.Println("Failed to start the server:", err)
+	}
 }

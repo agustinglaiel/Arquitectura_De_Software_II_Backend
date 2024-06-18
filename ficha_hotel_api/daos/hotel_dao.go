@@ -19,18 +19,26 @@ func NewHotelDAO(db *mongo.Database) *HotelDAO {
 	}
 }
 
+func (dao *HotelDAO) GetHotelByID(ctx context.Context, id primitive.ObjectID) (*models.Hotel, error) {
+	var hotel models.Hotel
+	err := dao.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&hotel)
+	if err != nil {
+		return nil, err
+	}
+	return &hotel, nil
+}
+
 func (dao *HotelDAO) InsertHotel(ctx context.Context, hotel models.Hotel) error {
 	hotel.ID = primitive.NewObjectID().Hex()
 	_, err := dao.collection.InsertOne(ctx, hotel)
-	return err
-}
-
-func (dao *HotelDAO) DeleteHotel(ctx context.Context, id primitive.ObjectID) error {
-	_, err := dao.collection.DeleteOne(ctx, bson.M{"_id": id})
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (dao *HotelDAO) UpdateHotel(ctx context.Context, id primitive.ObjectID, hotel models.Hotel) error {
+	filter := bson.M{"_id": id}
 	update := bson.M{
 		"$set": bson.M{
 			"name":            hotel.Name,
@@ -42,15 +50,19 @@ func (dao *HotelDAO) UpdateHotel(ctx context.Context, id primitive.ObjectID, hot
 			"available_rooms": hotel.AvailableRooms,
 		},
 	}
-	_, err := dao.collection.UpdateOne(ctx, bson.M{"_id": id}, update)
-	return err
+
+	_, err := dao.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (dao *HotelDAO) GetHotelByID(ctx context.Context, id primitive.ObjectID) (*models.Hotel, error) {
-	var hotel models.Hotel
-	err := dao.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&hotel)
+func (dao *HotelDAO) DeleteHotel(ctx context.Context, id primitive.ObjectID) error {
+	_, err := dao.collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &hotel, nil
+	return nil
 }

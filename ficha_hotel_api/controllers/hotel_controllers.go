@@ -1,119 +1,115 @@
 package controllers
 
 import (
-	"context"
-	"net/http"
-
 	"ficha_hotel_api/dtos"
 	"ficha_hotel_api/services"
 	"ficha_hotel_api/utils/errors"
+	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
 	rateLimiter = make(chan bool, 3)
 )
 
-type HotelController struct {
-	service services.HotelServiceInterface
+func GetHotelById(service services.HotelServiceInterface) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		if len(rateLimiter) == cap(rateLimiter) {
+			apiErr := errors.NewTooManyRequestsError("too many requests")
+			c.JSON(apiErr.Status(), apiErr)
+			return
+		}
+
+		rateLimiter <- true
+		hotelDto, err := service.GetHotelById(id)
+		<-rateLimiter
+
+		if err != nil {
+			c.JSON(err.Status(), err)
+			return
+		}
+
+		c.JSON(http.StatusOK, hotelDto)
+	}
 }
 
-func NewHotelController(service services.HotelServiceInterface) *HotelController {
-	return &HotelController{service: service}
+func InsertHotel(service services.HotelServiceInterface) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var hotelDto dtos.HotelDto
+		err := c.BindJSON(&hotelDto)
+
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		hotelDto, er := service.InsertHotel(hotelDto)
+
+		if er != nil {
+			c.JSON(er.Status(), er)
+			return
+		}
+
+		c.JSON(http.StatusCreated, hotelDto)
+	}
 }
 
-func (c *HotelController) CreateHotel(ctx *gin.Context) {
-	var hotelDTO dtos.HotelDto
-	if err := ctx.BindJSON(&hotelDTO); err != nil {
-		apiErr := errors.NewBadRequestApiError("invalid JSON body")
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
+func UpdateHotelById(service services.HotelServiceInterface) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var hotelDto dtos.HotelDto
+		err := c.BindJSON(&hotelDto)
+
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		id := c.Param("id")
+
+		if len(rateLimiter) == cap(rateLimiter) {
+			apiErr := errors.NewTooManyRequestsError("too many requests")
+			c.JSON(apiErr.Status(), apiErr)
+			return
+		}
+
+		rateLimiter <- true
+		updatedHotelDto, er := service.UpdateHotelById(id, hotelDto)
+		<-rateLimiter
+
+		if er != nil {
+			c.JSON(er.Status(), er)
+			return
+		}
+
+		c.JSON(http.StatusOK, updatedHotelDto)
 	}
-
-	rateLimiter <- true
-	result, err := c.service.CreateHotel(context.Background(), hotelDTO)
-	<-rateLimiter
-
-	if err != nil {
-		apiErr := errors.NewInternalServerApiError("error when trying to create hotel", err)
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, result)
 }
 
-func (c *HotelController) DeleteHotel(ctx *gin.Context) {
-	hotelID := ctx.Param("id")
-	id, err := primitive.ObjectIDFromHex(hotelID)
-	if err != nil {
-		apiErr := errors.NewBadRequestApiError("invalid hotel ID")
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
+func DeleteHotel(service services.HotelServiceInterface) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		if len(rateLimiter) == cap(rateLimiter) {
+			apiErr := errors.NewTooManyRequestsError("too many requests")
+			c.JSON(apiErr.Status(), apiErr)
+			return
+		}
+
+		rateLimiter <- true
+		err := service.DeleteHotel(id)
+		<-rateLimiter
+
+		if err != nil {
+			c.JSON(err.Status(), err)
+			return
+		}
+
+		c.JSON(http.StatusNoContent, nil)
 	}
-
-	rateLimiter <- true
-	err = c.service.DeleteHotel(context.Background(), id)
-	<-rateLimiter
-
-	if err != nil {
-		apiErr := errors.NewInternalServerApiError("error when trying to delete hotel", err)
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	ctx.JSON(http.StatusNoContent, nil)
-}
-
-func (c *HotelController) UpdateHotel(ctx *gin.Context) {
-	hotelID := ctx.Param("id")
-	id, err := primitive.ObjectIDFromHex(hotelID)
-	if err != nil {
-		apiErr := errors.NewBadRequestApiError("invalid hotel ID")
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	var hotelDTO dtos.HotelDto
-	if err := ctx.BindJSON(&hotelDTO); err != nil {
-		apiErr := errors.NewBadRequestApiError("invalid JSON body")
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	rateLimiter <- true
-	result, err := c.service.UpdateHotel(context.Background(), id, hotelDTO)
-	<-rateLimiter
-
-	if err != nil {
-		apiErr := errors.NewInternalServerApiError("error when trying to update hotel", err)
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, result)
-}
-
-func (c *HotelController) GetHotelByID(ctx *gin.Context) {
-	hotelID := ctx.Param("id")
-	id, err := primitive.ObjectIDFromHex(hotelID)
-	if err != nil {
-		apiErr := errors.NewBadRequestApiError("invalid hotel ID")
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	rateLimiter <- true
-	hotel, err := c.service.GetHotelByID(context.Background(), id)
-	<-rateLimiter
-
-	if err != nil {
-		apiErr := errors.NewInternalServerApiError("error when trying to get hotel", err)
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, hotel)
 }

@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
-
 	"ficha_hotel_api/daos"
 	"ficha_hotel_api/dtos"
 	"ficha_hotel_api/models"
@@ -11,82 +9,41 @@ import (
 	"ficha_hotel_api/utils/queue"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type HotelServiceInterface interface {
-	CreateHotel(ctx context.Context, hotelDto dtos.HotelDto) (*dtos.HotelDto, errors.ApiError)
-	DeleteHotel(ctx context.Context, id primitive.ObjectID) errors.ApiError
-	UpdateHotel(ctx context.Context, id primitive.ObjectID, hotelDto dtos.HotelDto) (*dtos.HotelDto, errors.ApiError)
-	GetHotelByID(ctx context.Context, id primitive.ObjectID) (*dtos.HotelDto, errors.ApiError)
+	GetHotelById(id string) (dtos.HotelDto, errors.ApiError)
+	InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, errors.ApiError)
+	UpdateHotelById(id string, hotelDto dtos.HotelDto) (dtos.HotelDto, errors.ApiError)
+	DeleteHotel(id string) errors.ApiError
 }
 
 type hotelService struct {
-	dao *daos.HotelDAO
+	db *mongo.Database
 }
 
-func NewHotelService(dao *daos.HotelDAO) HotelServiceInterface {
-	return &hotelService{dao: dao}
+var (
+	HotelService HotelServiceInterface
+)
+
+func NewHotelService(db *mongo.Database) HotelServiceInterface {
+	return &hotelService{db: db}
 }
 
-func (s *hotelService) CreateHotel(ctx context.Context, hotelDto dtos.HotelDto) (*dtos.HotelDto, errors.ApiError) {
-	var hotel models.Hotel
-	hotel.ID = primitive.NewObjectID().Hex()
-	hotel.Name = hotelDto.Name
-	hotel.Description = hotelDto.Description
-	hotel.Photos = hotelDto.Photos
-	hotel.Amenities = hotelDto.Amenities
-	hotel.RoomCount = hotelDto.RoomCount
-	hotel.City = hotelDto.City
-	hotel.AvailableRooms = hotelDto.AvailableRooms
-
-	err := s.dao.InsertHotel(ctx, hotel)
-	if err != nil {
-		return nil, errors.NewInternalServerApiError("error when trying to create hotel", err)
-	}
-	message, _ := json.Marshal(hotel)
-	queue.Send(string(message))
-	hotelDto.ID = hotel.ID
-	return &hotelDto, nil
-}
-
-func (s *hotelService) DeleteHotel(ctx context.Context, id primitive.ObjectID) errors.ApiError {
-	err := s.dao.DeleteHotel(ctx, id)
-	if err != nil {
-		return errors.NewInternalServerApiError("error when trying to delete hotel", err)
-	}
-	return nil
-}
-
-func (s *hotelService) UpdateHotel(ctx context.Context, id primitive.ObjectID, hotelDto dtos.HotelDto) (*dtos.HotelDto, errors.ApiError) {
-	hotel, err := s.dao.GetHotelByID(ctx, id)
-	if err != nil {
-		return nil, errors.NewInternalServerApiError("error when trying to get hotel", err)
-	}
-
-	hotel.Name = hotelDto.Name
-	hotel.Description = hotelDto.Description
-	hotel.Photos = hotelDto.Photos
-	hotel.Amenities = hotelDto.Amenities
-	hotel.RoomCount = hotelDto.RoomCount
-	hotel.City = hotelDto.City
-	hotel.AvailableRooms = hotelDto.AvailableRooms
-
-	err = s.dao.UpdateHotel(ctx, id, *hotel)
-	if err != nil {
-		return nil, errors.NewInternalServerApiError("error when trying to update hotel", err)
-	}
-	message, _ := json.Marshal(hotel)
-	queue.Send(string(message))
-	hotelDto.ID = hotel.ID
-	return &hotelDto, nil
-}
-
-func (s *hotelService) GetHotelByID(ctx context.Context, id primitive.ObjectID) (*dtos.HotelDto, errors.ApiError) {
-	hotel, err := s.dao.GetHotelByID(ctx, id)
-	if err != nil {
-		return nil, errors.NewInternalServerApiError("error when trying to get hotel", err)
-	}
+func (s *hotelService) GetHotelById(id string) (dtos.HotelDto, errors.ApiError) {
 	var hotelDto dtos.HotelDto
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return hotelDto, errors.NewBadRequestApiError("invalid hotel ID")
+	}
+
+	hotel, err := daos.NewHotelDAO(s.db).GetHotelByID(context.Background(), objectID)
+	if err != nil {
+		return hotelDto, errors.NewNotFoundApiError("hotel not found")
+	}
+
 	hotelDto.ID = hotel.ID
 	hotelDto.Name = hotel.Name
 	hotelDto.Description = hotel.Description
@@ -95,5 +52,72 @@ func (s *hotelService) GetHotelByID(ctx context.Context, id primitive.ObjectID) 
 	hotelDto.RoomCount = hotel.RoomCount
 	hotelDto.City = hotel.City
 	hotelDto.AvailableRooms = hotel.AvailableRooms
-	return &hotelDto, nil
+
+	return hotelDto, nil
+}
+
+func (s *hotelService) InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, errors.ApiError) {
+	var hotel models.Hotel
+
+	hotel.Name = hotelDto.Name
+	hotel.Description = hotelDto.Description
+	hotel.Photos = hotelDto.Photos
+	hotel.Amenities = hotelDto.Amenities
+	hotel.RoomCount = hotelDto.RoomCount
+	hotel.City = hotelDto.City
+	hotel.AvailableRooms = hotelDto.AvailableRooms
+
+	hotel.ID = primitive.NewObjectID().Hex()
+
+	err := daos.NewHotelDAO(s.db).InsertHotel(context.Background(), hotel)
+	if err != nil {
+		return hotelDto, errors.NewInternalServerApiError("error when trying to create hotel", err)
+	}
+
+	hotelDto.ID = hotel.ID
+	queue.Send(hotelDto.ID)
+	return hotelDto, nil
+}
+
+func (s *hotelService) UpdateHotelById(id string, hotelDto dtos.HotelDto) (dtos.HotelDto, errors.ApiError) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return hotelDto, errors.NewBadRequestApiError("invalid hotel ID")
+	}
+
+	hotel, err := daos.NewHotelDAO(s.db).GetHotelByID(context.Background(), objectID)
+	if err != nil {
+		return hotelDto, errors.NewNotFoundApiError("hotel not found")
+	}
+
+	hotel.Name = hotelDto.Name
+	hotel.Description = hotelDto.Description
+	hotel.Photos = hotelDto.Photos
+	hotel.Amenities = hotelDto.Amenities
+	hotel.RoomCount = hotelDto.RoomCount
+	hotel.City = hotelDto.City
+	hotel.AvailableRooms = hotelDto.AvailableRooms
+
+	err = daos.NewHotelDAO(s.db).UpdateHotel(context.Background(), objectID, *hotel)
+	if err != nil {
+		return hotelDto, errors.NewInternalServerApiError("error when trying to update hotel", err)
+	}
+
+	hotelDto.ID = hotel.ID
+	queue.Send(hotelDto.ID)
+	return hotelDto, nil
+}
+
+func (s *hotelService) DeleteHotel(id string) errors.ApiError {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.NewBadRequestApiError("invalid hotel ID")
+	}
+
+	err = daos.NewHotelDAO(s.db).DeleteHotel(context.Background(), objectID)
+	if err != nil {
+		return errors.NewInternalServerApiError("error when trying to delete hotel", err)
+	}
+
+	return nil
 }
