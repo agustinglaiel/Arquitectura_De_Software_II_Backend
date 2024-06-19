@@ -6,6 +6,8 @@ import (
 	"ficha_hotel_api/models"
 	"ficha_hotel_api/utils/errors"
 	"ficha_hotel_api/utils/queue"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type hotelService struct{}
@@ -14,7 +16,8 @@ type HotelServiceInterface interface {
 	GetHotelById(id string) (dtos.HotelDto, errors.ApiError)
 	InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, errors.ApiError)
 	UpdateHotelById(id string, hotelDto dtos.HotelDto) (dtos.HotelDto, errors.ApiError)
-	//DeleteHotel(id string) errors.ApiError
+	GetHotels() ([]dtos.HotelDto, errors.ApiError)
+	DeleteHotelById(id string) errors.ApiError
 }
 
 var (
@@ -92,4 +95,40 @@ func (s *hotelService) UpdateHotelById(id string, hotelDto dtos.HotelDto) (dtos.
 	return hotelDto, nil
 }
 
+func (s *hotelService) GetHotels() ([]dtos.HotelDto, errors.ApiError) {
+	hotels, err := dao.GetHotels()
+	if err != nil {
+		return nil, errors.NewInternalServerApiError("Error fetching hotels", err)
+	}
 
+	var hotelDtos []dtos.HotelDto
+	for _, hotel := range hotels {
+		hotelDto := dtos.HotelDto{
+			ID:             hotel.ID.Hex(),
+			Name:           hotel.Name,
+			Description:    hotel.Description,
+			Photos:         hotel.Photos,
+			Amenities:      hotel.Amenities,
+			RoomCount:      hotel.RoomCount,
+			City:           hotel.City,
+			AvailableRooms: hotel.AvailableRooms,
+		}
+		hotelDtos = append(hotelDtos, hotelDto)
+	}
+
+	return hotelDtos, nil
+}
+
+func (s *hotelService) DeleteHotelById(id string) errors.ApiError {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.NewBadRequestApiError("Invalid hotel ID")
+	}
+
+	err = dao.DeleteHotelById(objectID)
+	if err != nil {
+		return errors.NewInternalServerApiError("Error deleting hotel", err)
+	}
+
+	return nil
+}

@@ -11,7 +11,8 @@ func MapUrls(router *gin.Engine) {
 	router.GET("/hotel/:id", controllers.GetHotelById)
 	router.POST("/hotel", controllers.InsertHotel)
 	router.PUT("/hotel/:id", controllers.UpdateHotelById)
-	//router.DELETE("/hotel/:id", controllers.DeleteHotel)
+	router.DELETE("/hotel/:id", controllers.DeleteHotelById)
+	router.GET("/hotels", controllers.GetHotels)
 
 	fmt.Println("Finishing mappings configurations")
 }

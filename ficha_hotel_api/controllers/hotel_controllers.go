@@ -85,7 +85,26 @@ func UpdateHotelById(c *gin.Context){
 	c.JSON(http.StatusOK, updatedHotelDto)
 }
 
-func DeleteHotel(c *gin.Context){
+func GetHotels(c *gin.Context) {
+	if len(rateLimiter) == cap(rateLimiter) {
+		apiErr := errors.NewTooManyRequestsError("too many requests")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	rateLimiter <- true
+	hotels, err := service.HotelService.GetHotels()
+	<-rateLimiter
+
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, hotels)
+}
+
+func DeleteHotelById(c *gin.Context) {
 	id := c.Param("id")
 
 	if len(rateLimiter) == cap(rateLimiter) {
@@ -95,7 +114,7 @@ func DeleteHotel(c *gin.Context){
 	}
 
 	rateLimiter <- true
-	err := service.HotelService.DeleteHotel(id)
+	err := service.HotelService.DeleteHotelById(id)
 	<-rateLimiter
 
 	if err != nil {

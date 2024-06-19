@@ -45,6 +45,7 @@ func InsertHotel(hotel models.Hotel) models.Hotel {
 	return hotel
 }
 
+
 func UpdateHotel(hotel models.Hotel) models.Hotel {
 	db := db.MongoDb
 	filter := bson.M{"_id": hotel.ID}
@@ -69,4 +70,35 @@ func UpdateHotel(hotel models.Hotel) models.Hotel {
 	return hotel
 }
 
+func GetHotels() ([]models.Hotel, error) {
+	db := db.MongoDb
+	var hotels []models.Hotel
 
+	cursor, err := db.Collection("Hotels").Find(context.Background(), bson.M{})
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var hotel models.Hotel
+		if err := cursor.Decode(&hotel); err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		hotels = append(hotels, hotel)
+	}
+
+	return hotels, nil
+}
+
+func DeleteHotelById(id primitive.ObjectID) error {
+	db := db.MongoDb
+	_, err := db.Collection("Hotels").DeleteOne(context.Background(), bson.M{"_id": id})
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
