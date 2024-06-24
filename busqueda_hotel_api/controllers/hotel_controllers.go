@@ -206,13 +206,16 @@ func GetOrInsertByID(id string) {
 
     hotelSolr, err := services.HotelService.GetHotelById(id)
     if err != nil {
-        fmt.Println("Error fetching hotel by id:", err)
-        _, err := services.HotelService.InsertHotel(hotelResponse)
-        if err != nil {
-            fmt.Println("Error al crear el hotel:", err)
+        if apiErr, ok := err.(errors.ApiError); ok && apiErr.Status() == http.StatusNotFound {
+            _, err := services.HotelService.InsertHotel(hotelResponse)
+            if err != nil {
+                fmt.Println("Error al crear el hotel:", err)
+                return
+            }
+            fmt.Println("Hotel nuevo agregado:", id)
             return
         }
-        fmt.Println("Hotel nuevo agregado:", id)
+        fmt.Println("Error fetching hotel by id:", err)
         return
     }
 
@@ -232,4 +235,3 @@ func GetOrInsertByID(id string) {
     fmt.Println("Hotel actualizado:", id)
     return
 }
-

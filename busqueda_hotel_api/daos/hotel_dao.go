@@ -5,7 +5,6 @@ import (
 	"busqueda_hotel_api/utils/db"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	solr "github.com/rtt/Go-Solr"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -59,26 +58,24 @@ func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
 func (dao *HotelSolrDao) Create(hotel *models.Hotel) error {
 	hotel.ID = primitive.NewObjectID().Hex()
 
-	doc := solr.Document{
-        Fields: map[string]interface{}{
-            "id":              hotel.ID,
-            "name":            hotel.Name,
-            "description":     hotel.Description,
-            "city":            hotel.City,
-            "photos":          hotel.Photos,
-            "amenities":       strings.Join(hotel.Amenities, ", "), // Convierte la lista a una cadena
-            "room_count":      hotel.RoomCount,
-            "available_rooms": hotel.AvailableRooms,
-        },
-    }
+	doc := map[string]interface{}{
+		"id":             hotel.ID,
+		"name":           hotel.Name,
+		"description":    hotel.Description,
+		"city":           hotel.City,
+		"photos":         hotel.Photos,
+		"amenities":      hotel.Amenities,
+		"room_count":     hotel.RoomCount,
+		"available_rooms": hotel.AvailableRooms,
+	}
 
 	_, err := db.SolrClient.Update(doc, true)
-    if err != nil {
-        fmt.Println("Error inserting hotel:", err)
-        return models.Hotel{}
-    }
+	if err != nil {
+		fmt.Println("Error inserting hotel:", err)
+		return err
+	}
 
-    return hotel
+	return nil
 }
 
 func (dao *HotelSolrDao) Update(hotel *models.Hotel) error {
