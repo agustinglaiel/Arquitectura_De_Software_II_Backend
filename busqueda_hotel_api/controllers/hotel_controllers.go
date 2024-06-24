@@ -178,57 +178,58 @@ func GetDisponibilidad(c *gin.Context) {
 }
 
 func GetOrInsertByID(id string) {
-	// Hago una request a hotel-api pidiendo todos los datos del hotel
-	url := fmt.Sprintf("http://localhost:8070/hotel/%s", id)
+    url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
 
-	// Realiza la solicitud HTTP GET
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println("Error al hacer la solicitud HTTP:", err)
-		return
-	}
-	defer resp.Body.Close()
+    resp, err := http.Get(url)
+    if err != nil {
+        fmt.Println("Error al hacer la solicitud HTTP:", err)
+        return
+    }
+    defer resp.Body.Close()
 
-	// Verifica si la respuesta fue exitosa (código 200)
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("La solicitud no fue exitosa. Código de respuesta:", resp.StatusCode)
-		return
-	}
+    if resp.StatusCode != http.StatusOK {
+        fmt.Println("La solicitud no fue exitosa. Código de respuesta:", resp.StatusCode)
+        return
+    }
 
-	// Lee el cuerpo de la respuesta HTTP
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error al leer la respuesta HTTP:", err)
-		return
-	}
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        fmt.Println("Error al leer la respuesta HTTP:", err)
+        return
+    }
 
-	// Deserializa la respuesta en un objeto HotelDTO
-	var hotelResponse dtos.HotelDTO
-	if err := json.Unmarshal(body, &hotelResponse); err != nil {
-		fmt.Println("Error al deserializar la respuesta:", err)
-		return
-	}
+    var hotelResponse dtos.HotelDTO
+    if err := json.Unmarshal(body, &hotelResponse); err != nil {
+        fmt.Println("Error al deserializar la respuesta:", err)
+        return
+    }
 
-	// Me fijo si ya tengo cargado el hotel en solr
-	_, err = services.HotelService.GetHotelById(id)
-	if err != nil {
-		// Si no lo tengo cargado entonces lo agrego
-		_, err := services.HotelService.InsertHotel(hotelResponse)
-		if err != nil {
-			// Maneja el error de creación
-			fmt.Println("Error al crear el hotel:", err)
-			return
-		}
-		fmt.Println("Hotel nuevo agregado:", id)
-		return
-	}
+    hotelSolr, err := services.HotelService.GetHotelById(id)
+    if err != nil {
+        fmt.Println("Error fetching hotel by id:", err)
+        _, err := services.HotelService.InsertHotel(hotelResponse)
+        if err != nil {
+            fmt.Println("Error al crear el hotel:", err)
+            return
+        }
+        fmt.Println("Hotel nuevo agregado:", id)
+        return
+    }
 
-	// Si ya lo tengo cargado, le hago el update
-	_, err = services.HotelService.UpdateHotelById(id, hotelResponse)
-	if err != nil {
-		// Maneja el error de actualización
-		fmt.Println("Error al actualizar el hotel:", err)
-		return
-	}
-	return
+    hotelSolr.Name = hotelResponse.Name
+    hotelSolr.Description = hotelResponse.Description
+    hotelSolr.City = hotelResponse.City
+    hotelSolr.Photos = hotelResponse.Photos
+    hotelSolr.Amenities = hotelResponse.Amenities
+    hotelSolr.RoomCount = hotelResponse.RoomCount
+    hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
+
+    _, err = services.HotelService.UpdateHotelById(id, hotelResponse)
+    if err != nil {
+        fmt.Println("Error al actualizar el hotel:", err)
+        return
+    }
+    fmt.Println("Hotel actualizado:", id)
+    return
 }
+

@@ -36,6 +36,9 @@ func (s *hotelService) GetHotelById(id string) (dtos.HotelDTO, errors.ApiError) 
 	if err != nil {
 		return dtos.HotelDTO{}, errors.NewInternalServerApiError("Error fetching hotel", err)
 	}
+	if hotel == nil {
+		return dtos.HotelDTO{}, errors.NewNotFoundApiError("Hotel not found")
+	}
 
 	hotelDto := dtos.HotelDTO{
 		ID:             hotel.ID,
@@ -50,6 +53,7 @@ func (s *hotelService) GetHotelById(id string) (dtos.HotelDTO, errors.ApiError) 
 
 	return hotelDto, nil
 }
+
 
 func (s *hotelService) InsertHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, errors.ApiError) {
 	hotel := models.Hotel{

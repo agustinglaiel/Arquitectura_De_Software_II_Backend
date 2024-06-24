@@ -10,7 +10,7 @@ var SolrClient *solr.Connection
 
 func InitDB() error {
 	var err error
-	SolrClient, err = solr.Init("solr", 8983, "busqueda_hotel-core")
+	SolrClient, err = solr.Init("localhost", 8983, "busqueda_hotel-core")
 	if err != nil {
 		return err
 	}

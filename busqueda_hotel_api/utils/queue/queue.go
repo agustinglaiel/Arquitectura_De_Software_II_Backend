@@ -40,6 +40,7 @@ func StartReceiving() {
 		nil,               // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
+
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
@@ -52,12 +53,14 @@ func StartReceiving() {
 	failOnError(err, "Failed to register a consumer")
 
 	var forever chan struct{}
+
 	go func() {
 		for d := range msgs {
 			log.Printf("Received a message: %s", d.Body)
 			controllers.GetOrInsertByID(string(d.Body))
 		}
 	}()
-	log.Printf("Subscripcion a la cola con exito")
+
+	log.Printf("Subscription to the queue succeeded")
 	<-forever
 }
