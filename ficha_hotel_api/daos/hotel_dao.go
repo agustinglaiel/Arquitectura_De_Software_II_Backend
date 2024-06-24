@@ -20,7 +20,7 @@ func GetHotelById(id string) models.Hotel {
 		return hotel
 	}
 
-	err = db.Collection("Hotels").FindOne(context.TODO(), bson.D{{"_id", objId}}).Decode(&hotel)
+	err = db.Collection("hotels").FindOne(context.TODO(), bson.D{{"_id", objId}}).Decode(&hotel)
 
 	if err != nil{
 		fmt.Println(err)
@@ -34,7 +34,7 @@ func InsertHotel(hotel models.Hotel) models.Hotel {
 	db := db.MongoDb
 	insertHotel := hotel 
 	insertHotel.ID = primitive.NewObjectID()
-	_, err := db.Collection("Hotels").InsertOne(context.TODO(), & insertHotel)
+	_, err := db.Collection("hotels").InsertOne(context.TODO(), & insertHotel)
 
 	if err != nil {
 		fmt.Println(err)
@@ -61,7 +61,7 @@ func UpdateHotel(hotel models.Hotel) models.Hotel {
 		},
 	}
 
-	_, err := db.Collection("Hotels").UpdateOne(context.TODO(), filter, update)
+	_, err := db.Collection("hotels").UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		fmt.Println(err)
 		return hotel
@@ -74,7 +74,7 @@ func GetHotels() ([]models.Hotel, error) {
 	db := db.MongoDb
 	var hotels []models.Hotel
 
-	cursor, err := db.Collection("Hotels").Find(context.Background(), bson.M{})
+	cursor, err := db.Collection("hotels").Find(context.Background(), bson.M{})
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -95,7 +95,7 @@ func GetHotels() ([]models.Hotel, error) {
 
 func DeleteHotelById(id primitive.ObjectID) error {
 	db := db.MongoDb
-	_, err := db.Collection("Hotels").DeleteOne(context.Background(), bson.M{"_id": id})
+	_, err := db.Collection("hotels").DeleteOne(context.Background(), bson.M{"_id": id})
 	if err != nil {
 		fmt.Println(err)
 		return err
