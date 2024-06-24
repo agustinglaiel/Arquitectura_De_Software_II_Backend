@@ -5,28 +5,31 @@ import (
 	"busqueda_hotel_api/utils/db"
 	"busqueda_hotel_api/utils/queue"
 	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	ginRouter *gin.Engine
-)
-
 func main() {
+	// Initialize the Solr connection
 	err := db.InitDB()
 	if err != nil {
-		fmt.Println("Cannot init db")
-		fmt.Println(err)
-		return
+		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer db.DisconnectDB()
 
-	ginRouter = gin.Default()
-	router.MapUrls(ginRouter)
+	// Initialize the RabbitMQ consumer
+	go queue.StartReceiving()
 
-	go queue.InitConsumer()
+	// Create a new Gin router
+	r := gin.Default()
 
-	fmt.Println("Starting server")
-	ginRouter.Run(":8080")
+	// Map the routes
+	router.MapUrls(r)
+
+	// Start the server
+	port := "8080"
+	fmt.Printf("Starting server on port %s...\n", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
