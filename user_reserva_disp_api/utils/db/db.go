@@ -1,5 +1,9 @@
 package db
 
-//solo cree el archivo para que aparezca cuando clonen el repo. Dsp cambiamos los nombres de todos como correpondan
+import "github.com/jinzhu/gorm"
 
+var (
+	db  *gorm.DB
+	err error
+)
 
