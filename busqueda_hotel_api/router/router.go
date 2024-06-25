@@ -9,9 +9,9 @@ import (
 
 func MapUrls(router *gin.Engine) {
 	// Rutas para hoteles
-	router.GET("/hotel/:id", controllers.GetHotelById)
+	router.GET("/hotel/:id", controllers.GetHotel)
 	router.POST("/hotel", controllers.CreateHotel)
-	router.PUT("/hotel/:id", controllers.UpdateHotelById)
+	router.PUT("/hotel/:id", controllers.UpdateHotel)
 	//router.DELETE("/hotel/:id", controllers.DeleteHotelById)
 	router.GET("/hotels", controllers.GetHotels)
 	router.GET("/hotels/ciudad/:ciudad", controllers.GetHotelsByCiudad)
