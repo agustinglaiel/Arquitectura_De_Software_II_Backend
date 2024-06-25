@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	solr "github.com/rtt/Go-Solr"
@@ -45,23 +46,20 @@ func (dao *HotelSolrDao) Create(hotel *models.Hotel) error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Hotel creado en Solr: %+v", hotel)
 	return nil
 }
 
 func (dao *HotelSolrDao) Update(hotel *models.Hotel) error {
 	hotelDocument := map[string]interface{}{
-		"add": []interface{}{
-			map[string]interface{}{
-				"id":             hotel.ID,
-				"name":           hotel.Name,
-				"description":    hotel.Description,
-				"city":           hotel.City,
-				"photos":         hotel.Photos,
-				"room_count":     hotel.RoomCount,
-				"amenities":      hotel.Amenities,
-				"available_rooms": hotel.AvailableRooms,
-			},
-		},
+		"id":             hotel.ID,
+		"name":           hotel.Name,
+		"description":    hotel.Description,
+		"city":           hotel.City,
+		"photos":         hotel.Photos,
+		"room_count":     hotel.RoomCount,
+		"amenities":      hotel.Amenities,
+		"available_rooms": hotel.AvailableRooms,
 	}
 
 	updateURL := "http://localhost:8983/solr/busqueda_hotel-core/update?commit=true"
@@ -84,35 +82,40 @@ func (dao *HotelSolrDao) Update(hotel *models.Hotel) error {
 }
 
 func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
-	query := &solr.Query{
-		Params: solr.URLParamMap{
-			"q":    []string{fmt.Sprintf("id:%s", id)},
-			"rows": []string{"1"},
-		},
-	}
+    query := &solr.Query{
+        Params: solr.URLParamMap{
+            "q":    []string{fmt.Sprintf("id:%s", id)},
+            "rows": []string{"1"},
+        },
+    }
 
-	resp, err := db.SolrClient.Select(query)
-	if err != nil {
-		return nil, err
-	}
+    log.Printf("Realizando consulta a Solr con ID: %s", id)
 
-	if len(resp.Results.Collection) == 0 {
-		return nil, fmt.Errorf("hotel not found")
-	}
+    resp, err := db.SolrClient.Select(query)
+    if err != nil {
+        log.Printf("Error al realizar consulta a Solr: %s", err.Error())
+        return nil, err
+    }
 
-	doc := resp.Results.Collection[0]
-	hotel := &models.Hotel{
-		ID:             doc.Fields["id"].(string),
-		Name:           getStringField(doc, "name"),
-		Description:    getStringField(doc, "description"),
-		City:           getStringField(doc, "city"),
-		Photos:         getStringSliceFromInterface(doc.Field("photos")),
-		RoomCount:      int(doc.Field("room_count").([]interface{})[0].(float64)),
-		Amenities:      getStringSliceFromInterface(doc.Field("amenities")),
-		AvailableRooms: int(doc.Field("available_rooms").([]interface{})[0].(float64)),
-	}
+    if len(resp.Results.Collection) == 0 {
+        log.Printf("No se encontró el hotel con ID %s en Solr", id)
+        return nil, fmt.Errorf("No se encontró el hotel con id: %s en Solr", id)
+    }
 
-	return hotel, nil
+    doc := resp.Results.Collection[0]
+    hotel := &models.Hotel{
+        ID:             doc.Fields["id"].(string),
+        Name:           getStringField(doc, "name"),
+        Description:    getStringField(doc, "description"),
+        City:           getStringField(doc, "city"),
+        Photos:         getStringSliceFromInterface(doc.Field("photos")),
+        RoomCount:      int(doc.Field("room_count").([]interface{})[0].(float64)),
+        Amenities:      getStringSliceFromInterface(doc.Field("amenities")),
+        AvailableRooms: int(doc.Field("available_rooms").([]interface{})[0].(float64)),
+    }
+
+    log.Printf("Hotel obtenido de Solr: %+v", hotel)
+    return hotel, nil
 }
 
 func (dao *HotelSolrDao) GetAll() ([]*models.Hotel, error) {
@@ -178,20 +181,20 @@ func (dao *HotelSolrDao) GetByCity(city string) ([]*models.Hotel, error) {
 }
 
 func getStringField(doc solr.Document, field string) string {
-	if val, ok := doc.Field(field).([]interface{}); ok && len(val) > 0 {
-		return val[0].(string)
-	}
-	return ""
+    if val, ok := doc.Field(field).([]interface{}); ok && len(val) > 0 {
+        return val[0].(string)
+    }
+    return ""
 }
 
 func getStringSliceFromInterface(i interface{}) []string {
-	var result []string
-	if slice, ok := i.([]interface{}); ok {
-		for _, v := range slice {
-			if str, ok := v.(string); ok {
-				result = append(result, str)
-			}
-		}
-	}
-	return result
+    var result []string
+    if slice, ok := i.([]interface{}); ok {
+        for _, v := range slice {
+            if str, ok := v.(string); ok {
+                result = append(result, str)
+            }
+        }
+    }
+    return result
 }

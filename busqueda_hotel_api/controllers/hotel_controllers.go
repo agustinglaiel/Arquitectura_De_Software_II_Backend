@@ -7,50 +7,55 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetOrInsertByID(id string) {
+    log.Printf("Recibido ID del hotel: %s", id)
     url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
 
     resp, err := http.Get(url)
     if err != nil {
-        fmt.Println("Error al hacer la solicitud HTTP:", err)
+        log.Printf("Error al hacer la solicitud HTTP: %s", err.Error())
         return
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        fmt.Println("La solicitud no fue exitosa. Código de respuesta:", resp.StatusCode)
+        log.Printf("La solicitud no fue exitosa. Código de respuesta: %d", resp.StatusCode)
         return
     }
 
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
-        fmt.Println("Error al leer la respuesta HTTP:", err)
+        log.Printf("Error al leer la respuesta HTTP: %s", err.Error())
         return
     }
 
     var hotelResponse dtos.HotelDTO
     if err := json.Unmarshal(body, &hotelResponse); err != nil {
-        fmt.Println("Error al deserializar la respuesta:", err)
+        log.Printf("Error al deserializar la respuesta: %s", err.Error())
         return
     }
+
+    log.Printf("Datos del hotel obtenidos de la API de ficha: %+v", hotelResponse)
 
     hotelSolr, err := services.HotelService.GetHotel(id)
     if err != nil {
         if apiErr, ok := err.(errors.ApiError); ok && apiErr.Status() == http.StatusNotFound {
+            log.Printf("Hotel no encontrado en Solr, procediendo a crear: %s", id)
             _, err := services.HotelService.CreateHotel(hotelResponse)
             if err != nil {
-                fmt.Println("Error al crear el hotel:", err)
+                log.Printf("Error al crear el hotel: %s", err.Error())
                 return
             }
-            fmt.Println("Hotel nuevo agregado:", id)
+            log.Printf("Hotel nuevo agregado en Solr con ID: %s", id)
             return
         }
-        fmt.Println("Error fetching hotel by id:", err)
+        log.Printf("Error fetching hotel by id: %s", err.Error())
         return
     }
 
@@ -62,12 +67,13 @@ func GetOrInsertByID(id string) {
     hotelSolr.RoomCount = hotelResponse.RoomCount
     hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
 
+    log.Printf("Actualizando hotel en Solr con ID: %s", id)
     _, err = services.HotelService.UpdateHotel(hotelSolr)
     if err != nil {
-        fmt.Println("Error al actualizar el hotel:", err)
+        log.Printf("Error al actualizar el hotel: %s", err.Error())
         return
     }
-    fmt.Println("Hotel actualizado:", id)
+    log.Printf("Hotel actualizado en Solr con ID: %s", id)
     return
 }
 

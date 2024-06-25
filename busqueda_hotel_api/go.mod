@@ -5,9 +5,8 @@ go 1.20
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/json-iterator/go v1.1.12
-	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/rtt/Go-Solr v0.0.0-20190512221613-64fac99dcae2
-	go.mongodb.org/mongo-driver v1.15.1
+	github.com/streadway/amqp v1.1.0
 )
 
 require (
