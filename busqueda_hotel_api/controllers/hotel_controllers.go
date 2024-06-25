@@ -3,6 +3,7 @@ package controllers
 import (
 	"busqueda_hotel_api/dtos"
 	"busqueda_hotel_api/services"
+	"busqueda_hotel_api/utils/errors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,58 +13,64 @@ import (
 )
 
 func GetOrInsertByID(id string) {
-	url := fmt.Sprintf("http://hotel-api:8080/hotel/%s", id)
+    url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
 
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println("Error al hacer la solicitud HTTP:", err)
-		return
-	}
-	defer resp.Body.Close()
+    resp, err := http.Get(url)
+    if err != nil {
+        fmt.Println("Error al hacer la solicitud HTTP:", err)
+        return
+    }
+    defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("La solicitud no fue exitosa. Código de respuesta:", resp.StatusCode)
-		return
-	}
+    if resp.StatusCode != http.StatusOK {
+        fmt.Println("La solicitud no fue exitosa. Código de respuesta:", resp.StatusCode)
+        return
+    }
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error al leer la respuesta HTTP:", err)
-		return
-	}
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        fmt.Println("Error al leer la respuesta HTTP:", err)
+        return
+    }
 
-	var hotelResponse dtos.HotelDTO
-	if err := json.Unmarshal(body, &hotelResponse); err != nil {
-		fmt.Println("Error al deserializar la respuesta:", err)
-		return
-	}
+    var hotelResponse dtos.HotelDTO
+    if err := json.Unmarshal(body, &hotelResponse); err != nil {
+        fmt.Println("Error al deserializar la respuesta:", err)
+        return
+    }
 
-	hotelSolr, err := services.HotelService.GetHotel(id)
-	if err != nil {
-		_, err := services.HotelService.CreateHotel(hotelResponse)
-		if err != nil {
-			fmt.Println("Error al crear el hotel:", err)
-			return
-		}
-		fmt.Println("Hotel nuevo agregado:", id)
-		return
-	}
+    hotelSolr, err := services.HotelService.GetHotel(id)
+    if err != nil {
+        if apiErr, ok := err.(errors.ApiError); ok && apiErr.Status() == http.StatusNotFound {
+            _, err := services.HotelService.CreateHotel(hotelResponse)
+            if err != nil {
+                fmt.Println("Error al crear el hotel:", err)
+                return
+            }
+            fmt.Println("Hotel nuevo agregado:", id)
+            return
+        }
+        fmt.Println("Error fetching hotel by id:", err)
+        return
+    }
 
-	hotelSolr.Name = hotelResponse.Name
-	hotelSolr.Description = hotelResponse.Description
-	hotelSolr.City = hotelResponse.City
-	hotelSolr.Photos = hotelResponse.Photos
-	hotelSolr.Amenities = hotelResponse.Amenities
-	hotelSolr.RoomCount = hotelResponse.RoomCount
-	hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
+    hotelSolr.Name = hotelResponse.Name
+    hotelSolr.Description = hotelResponse.Description
+    hotelSolr.City = hotelResponse.City
+    hotelSolr.Photos = hotelResponse.Photos
+    hotelSolr.Amenities = hotelResponse.Amenities
+    hotelSolr.RoomCount = hotelResponse.RoomCount
+    hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
 
-	_, err = services.HotelService.UpdateHotel(hotelSolr)
-	if err != nil {
-		fmt.Println("Error al actualizar el hotel:", err)
-		return
-	}
-	fmt.Println("Hotel actualizado:", id)
+    _, err = services.HotelService.UpdateHotel(hotelSolr)
+    if err != nil {
+        fmt.Println("Error al actualizar el hotel:", err)
+        return
+    }
+    fmt.Println("Hotel actualizado:", id)
+    return
 }
+
 
 func GetHotels(ctx *gin.Context) {
 	hotelsDto, err := services.HotelService.GetAllHotels()

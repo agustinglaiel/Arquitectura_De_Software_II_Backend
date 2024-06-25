@@ -173,27 +173,28 @@ func checkDisponibilidad(hotelID string, fechainicio string, fechafinal string) 
 }
 
 func (s *hotelService) GetHotel(id string) (dtos.HotelDTO, errors.ApiError) {
-	var hotelDto dtos.HotelDTO
-	hotel, err := s.dao.Get(id)
-	if err != nil {
-		return hotelDto, errors.NewBadRequestApiError(err.Error())
-	}
+    var hotelDto dtos.HotelDTO
+    hotel, err := s.dao.Get(id)
+    if err != nil {
+        return hotelDto, errors.NewBadRequestApiError(err.Error())
+    }
 
-	if hotel.ID == "" {
-		return hotelDto, errors.NewBadRequestApiError("hotel not found")
-	}
+    if hotel == nil {
+        return hotelDto, errors.NewBadRequestApiError("hotel not found")
+    }
 
-	hotelDto.ID = hotel.ID
-	hotelDto.Name = hotel.Name
-	hotelDto.Description = hotel.Description
-	hotelDto.City = hotel.City
-	hotelDto.Photos = hotel.Photos
-	hotelDto.RoomCount = hotel.RoomCount
-	hotelDto.Amenities = hotel.Amenities
-	hotelDto.AvailableRooms = hotel.AvailableRooms
+    hotelDto.ID = hotel.ID
+    hotelDto.Name = hotel.Name
+    hotelDto.Description = hotel.Description
+    hotelDto.City = hotel.City
+    hotelDto.Photos = hotel.Photos
+    hotelDto.RoomCount = hotel.RoomCount
+    hotelDto.Amenities = hotel.Amenities
+    hotelDto.AvailableRooms = hotel.AvailableRooms
 
-	return hotelDto, nil
+    return hotelDto, nil
 }
+
 
 func (s *hotelService) CreateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, errors.ApiError) {
 	var hotel models.Hotel
