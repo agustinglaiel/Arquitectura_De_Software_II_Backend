@@ -3,11 +3,12 @@ package daos
 import (
 	"busqueda_hotel_api/models"
 	"busqueda_hotel_api/utils/db"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	solr "github.com/rtt/Go-Solr"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type HotelDao interface {
@@ -15,212 +16,182 @@ type HotelDao interface {
 	Create(hotel *models.Hotel) error
 	Update(hotel *models.Hotel) error
 	GetAll() ([]*models.Hotel, error)
-	GetByCiudad(city string) ([]*models.Hotel, error)
-	GetDisponibilidad(ciudad, fechainicio, fechafinal string) ([]*models.Hotel, error)
-	DeleteById(id string) error
+	GetByCity(city string) ([]*models.Hotel, error)
 }
 
 type HotelSolrDao struct{}
 
-func NewHotelSolrDao() HotelDao {
+func NewHotelSolrDAO() HotelDao {
 	return &HotelSolrDao{}
+}
+
+func (dao *HotelSolrDao) Create(hotel *models.Hotel) error {
+	hotelDocument := map[string]interface{}{
+		"add": []interface{}{
+			map[string]interface{}{
+				"id":             hotel.ID,
+				"name":           hotel.Name,
+				"description":    hotel.Description,
+				"city":           hotel.City,
+				"photos":         hotel.Photos,
+				"room_count":     hotel.RoomCount,
+				"amenities":      hotel.Amenities,
+				"available_rooms": hotel.AvailableRooms,
+			},
+		},
+	}
+
+	_, err := db.SolrClient.Update(hotelDocument, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dao *HotelSolrDao) Update(hotel *models.Hotel) error {
+	hotelDocument := map[string]interface{}{
+		"add": []interface{}{
+			map[string]interface{}{
+				"id":             hotel.ID,
+				"name":           hotel.Name,
+				"description":    hotel.Description,
+				"city":           hotel.City,
+				"photos":         hotel.Photos,
+				"room_count":     hotel.RoomCount,
+				"amenities":      hotel.Amenities,
+				"available_rooms": hotel.AvailableRooms,
+			},
+		},
+	}
+
+	updateURL := "http://localhost:8983/solr/busqueda_hotel-core/update?commit=true"
+	requestBody, err := json.Marshal(hotelDocument)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(updateURL, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Error al actualizar el hotel en Solr. Código de respuesta: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
 	query := &solr.Query{
 		Params: solr.URLParamMap{
-			"q": []string{fmt.Sprintf("id:%s", id)},
+			"q":    []string{fmt.Sprintf("id:%s", id)},
+			"rows": []string{"1"},
 		},
-		Rows: 1,
 	}
 
 	resp, err := db.SolrClient.Select(query)
-	if err != nil || len(resp.Results.Collection) == 0 {
-		fmt.Println("Error fetching hotel by id:", err)
+	if err != nil {
 		return nil, err
 	}
 
-	var hotel models.Hotel
-	data, err := json.Marshal(resp.Results.Collection[0].Fields)
-	if err != nil {
-		fmt.Println("Error marshalling hotel data:", err)
-		return nil, err
-	}
-	err = json.Unmarshal(data, &hotel)
-	if err != nil {
-		fmt.Println("Error unmarshalling hotel data:", err)
-		return nil, err
+	if len(resp.Results.Collection) == 0 {
+		return nil, fmt.Errorf("hotel not found")
 	}
 
-	return &hotel, nil
-}
-
-func (dao *HotelSolrDao) Create(hotel *models.Hotel) error {
-	hotel.ID = primitive.NewObjectID().Hex()
-
-	doc := map[string]interface{}{
-		"id":             hotel.ID,
-		"name":           hotel.Name,
-		"description":    hotel.Description,
-		"city":           hotel.City,
-		"photos":         hotel.Photos,
-		"amenities":      hotel.Amenities,
-		"room_count":     hotel.RoomCount,
-		"available_rooms": hotel.AvailableRooms,
+	doc := resp.Results.Collection[0]
+	hotel := &models.Hotel{
+		ID:             doc.Fields["id"].(string),
+		Name:           getStringField(doc, "name"),
+		Description:    getStringField(doc, "description"),
+		City:           getStringField(doc, "city"),
+		Photos:         getStringSliceFromInterface(doc.Field("photos")),
+		RoomCount:      int(doc.Field("room_count").([]interface{})[0].(float64)),
+		Amenities:      getStringSliceFromInterface(doc.Field("amenities")),
+		AvailableRooms: int(doc.Field("available_rooms").([]interface{})[0].(float64)),
 	}
 
-	_, err := db.SolrClient.Update(doc, true)
-	if err != nil {
-		fmt.Println("Error inserting hotel:", err)
-		return err
-	}
-
-	return nil
-}
-
-func (dao *HotelSolrDao) Update(hotel *models.Hotel) error {
-	doc := map[string]interface{}{
-		"id":             hotel.ID,
-		"name":           hotel.Name,
-		"description":    hotel.Description,
-		"city":           hotel.City,
-		"photos":         hotel.Photos,
-		"amenities":      hotel.Amenities,
-		"room_count":     hotel.RoomCount,
-		"available_rooms": hotel.AvailableRooms,
-	}
-
-	_, err := db.SolrClient.Update(doc, true)
-	if err != nil {
-		fmt.Println("Error updating hotel:", err)
-		return err
-	}
-
-	return nil
+	return hotel, nil
 }
 
 func (dao *HotelSolrDao) GetAll() ([]*models.Hotel, error) {
 	query := &solr.Query{
 		Params: solr.URLParamMap{
-			"q": []string{"*:*"},
+			"q":    []string{"*:*"},
+			"rows": []string{"1000"},
 		},
-		Rows: 100,
 	}
 
 	resp, err := db.SolrClient.Select(query)
 	if err != nil {
-		fmt.Println("Error fetching all hotels:", err)
 		return nil, err
 	}
 
 	var hotels []*models.Hotel
 	for _, doc := range resp.Results.Collection {
-		var hotel models.Hotel
-		data, err := json.Marshal(doc.Fields)
-		if err != nil {
-			fmt.Println("Error marshalling hotel data:", err)
-			return nil, err
+		hotel := &models.Hotel{
+			ID:             doc.Fields["id"].(string),
+			Name:           getStringField(doc, "name"),
+			Description:    getStringField(doc, "description"),
+			City:           getStringField(doc, "city"),
+			Photos:         getStringSliceFromInterface(doc.Field("photos")),
+			RoomCount:      int(doc.Field("room_count").([]interface{})[0].(float64)),
+			Amenities:      getStringSliceFromInterface(doc.Field("amenities")),
+			AvailableRooms: int(doc.Field("available_rooms").([]interface{})[0].(float64)),
 		}
-		err = json.Unmarshal(data, &hotel)
-		if err != nil {
-			fmt.Println("Error unmarshalling hotel data:", err)
-			return nil, err
-		}
-		hotels = append(hotels, &hotel)
+		hotels = append(hotels, hotel)
 	}
 
 	return hotels, nil
 }
 
-func (dao *HotelSolrDao) GetByCiudad(ciudad string) ([]*models.Hotel, error) {
+func (dao *HotelSolrDao) GetByCity(city string) ([]*models.Hotel, error) {
 	query := &solr.Query{
 		Params: solr.URLParamMap{
-			"q": []string{fmt.Sprintf("city:%s", ciudad)},
+			"q":    []string{fmt.Sprintf("city:\"%s\"", city)},
+			"rows": []string{"1000"},
 		},
-		Rows: 100,
 	}
 
 	resp, err := db.SolrClient.Select(query)
 	if err != nil {
-		fmt.Println("Error fetching hotels by city:", err)
 		return nil, err
 	}
 
 	var hotels []*models.Hotel
 	for _, doc := range resp.Results.Collection {
-		var hotel models.Hotel
-		data, err := json.Marshal(doc.Fields)
-		if err != nil {
-			fmt.Println("Error marshalling hotel data:", err)
-			return nil, err
+		hotel := &models.Hotel{
+			ID:             doc.Fields["id"].(string),
+			Name:           getStringField(doc, "name"),
+			Description:    getStringField(doc, "description"),
+			City:           getStringField(doc, "city"),
+			Photos:         getStringSliceFromInterface(doc.Field("photos")),
+			RoomCount:      int(doc.Field("room_count").([]interface{})[0].(float64)),
+			Amenities:      getStringSliceFromInterface(doc.Field("amenities")),
+			AvailableRooms: int(doc.Field("available_rooms").([]interface{})[0].(float64)),
 		}
-		err = json.Unmarshal(data, &hotel)
-		if err != nil {
-			fmt.Println("Error unmarshalling hotel data:", err)
-			return nil, err
-		}
-		hotels = append(hotels, &hotel)
+		hotels = append(hotels, hotel)
 	}
 
 	return hotels, nil
 }
 
-func (dao *HotelSolrDao) GetDisponibilidad(ciudad, fechainicio, fechafinal string) ([]*models.Hotel, error) {
-	query := &solr.Query{
-		Params: solr.URLParamMap{
-			"q": []string{fmt.Sprintf("city:%s AND available_rooms:[1 TO *]", ciudad)},
-		},
-		Rows: 100,
+func getStringField(doc solr.Document, field string) string {
+	if val, ok := doc.Field(field).([]interface{}); ok && len(val) > 0 {
+		return val[0].(string)
 	}
-
-	resp, err := db.SolrClient.Select(query)
-	if err != nil {
-		fmt.Println("Error fetching hotel availability:", err)
-		return nil, err
-	}
-
-	var hotels []*models.Hotel
-	for _, doc := range resp.Results.Collection {
-		var hotel models.Hotel
-		data, err := json.Marshal(doc.Fields)
-		if err != nil {
-			fmt.Println("Error marshalling hotel data:", err)
-			return nil, err
-		}
-		err = json.Unmarshal(data, &hotel)
-		if err != nil {
-			fmt.Println("Error unmarshalling hotel data:", err)
-			return nil, err
-		}
-		hotels = append(hotels, &hotel)
-	}
-
-	return hotels, nil
+	return ""
 }
 
-func (dao *HotelSolrDao) DeleteById(id string) error {
-	query := &solr.Query{
-		Params: solr.URLParamMap{
-			"q": []string{fmt.Sprintf("id:%s", id)},
-		},
-		Rows: 1,
+func getStringSliceFromInterface(i interface{}) []string {
+	var result []string
+	if slice, ok := i.([]interface{}); ok {
+		for _, v := range slice {
+			if str, ok := v.(string); ok {
+				result = append(result, str)
+			}
+		}
 	}
-
-	resp, err := db.SolrClient.Select(query)
-	if err != nil || len(resp.Results.Collection) == 0 {
-		fmt.Println("Error fetching hotel by id for deletion:", err)
-		return err
-	}
-
-	hotelID := resp.Results.Collection[0].Fields["id"].(string)
-	_, err = db.SolrClient.Update(map[string]interface{}{
-		"id":        hotelID,
-		"_version_": -1, // Setting a negative version number to mark for deletion
-	}, true)
-	if err != nil {
-		fmt.Println("Error deleting hotel:", err)
-		return err
-	}
-
-	return nil
+	return result
 }

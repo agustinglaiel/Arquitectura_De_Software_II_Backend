@@ -3,7 +3,6 @@ package controllers
 import (
 	"busqueda_hotel_api/dtos"
 	"busqueda_hotel_api/services"
-	"busqueda_hotel_api/utils/errors"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,226 +11,167 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	rateLimiter = make(chan bool, 3)
-)
+func GetOrInsertByID(id string) {
+	url := fmt.Sprintf("http://hotel-api:8080/hotel/%s", id)
 
-func GetHotelById(c *gin.Context) {
-	id := c.Param("id")
-
-	if len(rateLimiter) == cap(rateLimiter) {
-		apiErr := errors.NewTooManyRequestsError("too many requests")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	rateLimiter <- true
-	hotelDTO, err := services.HotelService.GetHotelById(id)
-	<-rateLimiter
-
+	resp, err := http.Get(url)
 	if err != nil {
-		c.JSON(err.Status(), err)
+		fmt.Println("Error al hacer la solicitud HTTP:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("La solicitud no fue exitosa. Código de respuesta:", resp.StatusCode)
 		return
 	}
 
-	c.JSON(http.StatusOK, hotelDTO)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error al leer la respuesta HTTP:", err)
+		return
+	}
+
+	var hotelResponse dtos.HotelDTO
+	if err := json.Unmarshal(body, &hotelResponse); err != nil {
+		fmt.Println("Error al deserializar la respuesta:", err)
+		return
+	}
+
+	hotelSolr, err := services.HotelService.GetHotel(id)
+	if err != nil {
+		_, err := services.HotelService.CreateHotel(hotelResponse)
+		if err != nil {
+			fmt.Println("Error al crear el hotel:", err)
+			return
+		}
+		fmt.Println("Hotel nuevo agregado:", id)
+		return
+	}
+
+	hotelSolr.Name = hotelResponse.Name
+	hotelSolr.Description = hotelResponse.Description
+	hotelSolr.City = hotelResponse.City
+	hotelSolr.Photos = hotelResponse.Photos
+	hotelSolr.Amenities = hotelResponse.Amenities
+	hotelSolr.RoomCount = hotelResponse.RoomCount
+	hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
+
+	_, err = services.HotelService.UpdateHotel(hotelSolr)
+	if err != nil {
+		fmt.Println("Error al actualizar el hotel:", err)
+		return
+	}
+	fmt.Println("Hotel actualizado:", id)
 }
 
-func InsertHotel(c *gin.Context) {
-	var hotelDTO dtos.HotelDTO
-	err := c.BindJSON(&hotelDTO)
-
+func GetHotels(ctx *gin.Context) {
+	hotelsDto, err := services.HotelService.GetAllHotels()
 	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err})
 		return
 	}
 
-	hotelDTO, er := services.HotelService.InsertHotel(hotelDTO)
-
-	if er != nil {
-		c.JSON(er.Status(), er)
-		return
-	}
-
-	c.JSON(http.StatusCreated, hotelDTO)
+	ctx.JSON(http.StatusOK, hotelsDto)
 }
 
-func UpdateHotelById(c *gin.Context) {
-	var hotelDTO dtos.HotelDTO
-	err := c.BindJSON(&hotelDTO)
-
+func GetHotelsByCiudad(ctx *gin.Context) {
+	ciudad := ctx.Param("ciudad")
+	hotelsDto, err := services.HotelService.GetHotelsByCiudad(ciudad)
 	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err})
 		return
 	}
 
-	id := c.Param("id")
-
-	if len(rateLimiter) == cap(rateLimiter) {
-		apiErr := errors.NewTooManyRequestsError("too many requests")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	rateLimiter <- true
-	updatedHotelDTO, er := services.HotelService.UpdateHotelById(id, hotelDTO)
-	<-rateLimiter
-
-	if er != nil {
-		c.JSON(er.Status(), er)
-		return
-	}
-
-	c.JSON(http.StatusOK, updatedHotelDTO)
+	ctx.JSON(http.StatusOK, hotelsDto)
 }
 
-func DeleteHotelById(c *gin.Context) {
-	id := c.Param("id")
-
-	if len(rateLimiter) == cap(rateLimiter) {
-		apiErr := errors.NewTooManyRequestsError("too many requests")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	rateLimiter <- true
-	err := services.HotelService.DeleteHotelById(id)
-	<-rateLimiter
-
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-
-	c.JSON(http.StatusNoContent, nil)
-}
-
-func GetHotels(c *gin.Context) {
-	if len(rateLimiter) == cap(rateLimiter) {
-		apiErr := errors.NewTooManyRequestsError("too many requests")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	rateLimiter <- true
-	hotelsDTO, err := services.HotelService.GetHotels()
-	<-rateLimiter
-
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-
-	c.JSON(http.StatusOK, hotelsDTO)
-}
-
-func GetHotelsByCiudad(c *gin.Context) {
-	ciudad := c.Param("ciudad")
-
-	if len(rateLimiter) == cap(rateLimiter) {
-		apiErr := errors.NewTooManyRequestsError("too many requests")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	rateLimiter <- true
-	hotelsDTO, err := services.HotelService.GetHotelsByCiudad(ciudad)
-	<-rateLimiter
-
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-
-	c.JSON(http.StatusOK, hotelsDTO)
-}
-
-func GetDisponibilidad(c *gin.Context) {
-	ciudad := c.Param("ciudad")
-	fechainicio := c.Param("fechainicio")
-	fechafinal := c.Param("fechafinal")
+func GetDisponibilidad(ctx *gin.Context) {
+	ciudad := ctx.Param("ciudad")
+	fechainicio := ctx.Param("fechainicio")
+	fechafinal := ctx.Param("fechafinal")
 
 	if ciudad == "" || fechainicio == "" || fechafinal == "" {
-		apiErr := errors.NewBadRequestApiError("Missing parameters")
-		c.JSON(apiErr.Status(), apiErr)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Las fechas de inicio y final son obligatorias"})
 		return
 	}
 
-	if len(rateLimiter) == cap(rateLimiter) {
-		apiErr := errors.NewTooManyRequestsError("too many requests")
-		c.JSON(apiErr.Status(), apiErr)
-		return
+	searchRequest := dtos.SearchRequestDTO{
+		City:     ciudad,
+		DateFrom: fechainicio,
+		DateTo:   fechafinal,
 	}
 
-	rateLimiter <- true
-	hotelsDTO, err := services.HotelService.GetDisponibilidad(ciudad, fechainicio, fechafinal)
-	<-rateLimiter
-
+	hotelsDto, err := services.HotelService.GetDisponibilidad(searchRequest)
 	if err != nil {
-		c.JSON(err.Status(), err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err})
 		return
 	}
 
-	c.JSON(http.StatusOK, hotelsDTO)
+	ctx.JSON(http.StatusOK, hotelsDto)
 }
 
-func GetOrInsertByID(id string) {
-    url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
 
-    resp, err := http.Get(url)
-    if err != nil {
-        fmt.Println("Error al hacer la solicitud HTTP:", err)
-        return
-    }
-    defer resp.Body.Close()
+func GetHotel(ctx *gin.Context) {
+	hotelID := ctx.Param("id")
+	hotelDto, err := services.HotelService.GetHotel(hotelID)
+	if err != nil {
+		fmt.Println("Error al buscar el hotel:", err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Hotel no encontrado"})
+		return
+	}
 
-    if resp.StatusCode != http.StatusOK {
-        fmt.Println("La solicitud no fue exitosa. Código de respuesta:", resp.StatusCode)
-        return
-    }
+	ctx.JSON(http.StatusOK, hotelDto)
+}
 
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        fmt.Println("Error al leer la respuesta HTTP:", err)
-        return
-    }
+func CreateHotel(ctx *gin.Context) {
+	var hotelDto dtos.HotelDTO
 
-    var hotelResponse dtos.HotelDTO
-    if err := json.Unmarshal(body, &hotelResponse); err != nil {
-        fmt.Println("Error al deserializar la respuesta:", err)
-        return
-    }
+	if err := ctx.ShouldBindJSON(&hotelDto); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid Request Body"})
+		return
+	}
 
-    hotelSolr, err := services.HotelService.GetHotelById(id)
-    if err != nil {
-        if apiErr, ok := err.(errors.ApiError); ok && apiErr.Status() == http.StatusNotFound {
-            _, err := services.HotelService.InsertHotel(hotelResponse)
-            if err != nil {
-                fmt.Println("Error al crear el hotel:", err)
-                return
-            }
-            fmt.Println("Hotel nuevo agregado:", id)
-            return
-        }
-        fmt.Println("Error fetching hotel by id:", err)
-        return
-    }
+	hotel, err := services.HotelService.CreateHotel(hotelDto)
+	if err != nil {
+		fmt.Println("Error al crear el hotel:", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear el hotel"})
+		return
+	}
 
-    hotelSolr.Name = hotelResponse.Name
-    hotelSolr.Description = hotelResponse.Description
-    hotelSolr.City = hotelResponse.City
-    hotelSolr.Photos = hotelResponse.Photos
-    hotelSolr.Amenities = hotelResponse.Amenities
-    hotelSolr.RoomCount = hotelResponse.RoomCount
-    hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
+	ctx.JSON(http.StatusCreated, hotel)
+}
 
-    _, err = services.HotelService.UpdateHotelById(id, hotelResponse)
-    if err != nil {
-        fmt.Println("Error al actualizar el hotel:", err)
-        return
-    }
-    fmt.Println("Hotel actualizado:", id)
-    return
+func UpdateHotel(ctx *gin.Context) {
+	hotelID := ctx.Param("id")
+
+	existingHotel, err := services.HotelService.GetHotel(hotelID)
+	if err != nil {
+		fmt.Println("Error al buscar el hotel:", err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Hotel no encontrado"})
+		return
+	}
+
+	var hotelDto dtos.HotelDTO
+	if err := ctx.ShouldBindJSON(&hotelDto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	existingHotel.Name = hotelDto.Name
+	existingHotel.Description = hotelDto.Description
+	existingHotel.City = hotelDto.City
+	existingHotel.Photos = hotelDto.Photos
+	existingHotel.Amenities = hotelDto.Amenities
+	existingHotel.RoomCount = hotelDto.RoomCount
+	existingHotel.AvailableRooms = hotelDto.AvailableRooms
+
+	_, err = services.HotelService.UpdateHotel(existingHotel)
+	if err != nil {
+		fmt.Println("Error al actualizar el hotel:", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el hotel"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Hotel actualizado con éxito"})
 }

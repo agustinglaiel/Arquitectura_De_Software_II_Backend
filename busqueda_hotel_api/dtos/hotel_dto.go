@@ -11,6 +11,9 @@ type HotelDTO struct {
     AvailableRooms int      `json:"available_rooms"`
 }
 
+type HotelsDTO struct{
+    Hotels []HotelDTO `json:"hotels"`
+}
 /*
 Para transferir datos entre los microservicios y Solr.
 Campos similares al modelo Hotel para indexación y actualización en Solr.
