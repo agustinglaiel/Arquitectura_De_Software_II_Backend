@@ -4,6 +4,7 @@ import (
 	"ficha_hotel_api/dtos"
 	service "ficha_hotel_api/services"
 	"ficha_hotel_api/utils/errors"
+	"ficha_hotel_api/utils/queue"
 	"fmt"
 	"net/http"
 
@@ -105,22 +106,24 @@ func GetHotels(c *gin.Context) {
 }
 
 func DeleteHotelById(c *gin.Context) {
-	id := c.Param("id")
+    id := c.Param("id")
 
-	if len(rateLimiter) == cap(rateLimiter) {
-		apiErr := errors.NewTooManyRequestsError("too many requests")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    if len(rateLimiter) == cap(rateLimiter) {
+        apiErr := errors.NewTooManyRequestsError("too many requests")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	rateLimiter <- true
-	err := service.HotelService.DeleteHotelById(id)
-	<-rateLimiter
+    rateLimiter <- true
+    err := service.HotelService.DeleteHotelById(id)
+    <-rateLimiter
 
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
+    if err != nil {
+        c.JSON(err.Status(), err)
+        return
+    }
 
-	c.JSON(http.StatusNoContent, nil)
+    queue.Send(id, "delete")
+
+    c.JSON(http.StatusNoContent, nil)
 }

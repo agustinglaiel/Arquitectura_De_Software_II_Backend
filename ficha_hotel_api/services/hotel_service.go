@@ -67,7 +67,7 @@ func (s *hotelService) InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, error
 
 	hotelDto.ID = hotel.ID.Hex()
 
-	queue.Send(hotelDto.ID)
+	queue.Send(hotelDto.ID, "create")
 
 	return hotelDto, nil
 }
@@ -90,7 +90,7 @@ func (s *hotelService) UpdateHotelById(id string, hotelDto dtos.HotelDto) (dtos.
 	dao.UpdateHotel(hotel)
 	hotelDto.ID = hotel.ID.Hex()
 
-	queue.Send(hotelDto.ID)
+	queue.Send(hotelDto.ID, "update")
 
 	return hotelDto, nil
 }
@@ -129,6 +129,8 @@ func (s *hotelService) DeleteHotelById(id string) errors.ApiError {
 	if err != nil {
 		return errors.NewInternalServerApiError("Error deleting hotel", err)
 	}
+
+	queue.Send(id, "delete")
 
 	return nil
 }
