@@ -54,7 +54,7 @@ func GetOrInsertByID(id string) {
 		return
     }
 
-    log.Printf("Hotel encontrado en Solr con ID: %s. Procediendo a actualizar.", id)
+    //log.Printf("Hotel encontrado en Solr con ID: %s. Procediendo a actualizar.", id)
     hotelSolr.Name = hotelResponse.Name
     hotelSolr.Description = hotelResponse.Description
     hotelSolr.City = hotelResponse.City

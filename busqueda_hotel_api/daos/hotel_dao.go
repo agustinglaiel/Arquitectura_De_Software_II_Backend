@@ -94,7 +94,7 @@ func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
 		},
 	}
 
-	log.Printf("Realizando consulta a Solr con ID: %s", id)
+	//log.Printf("Realizando consulta a Solr con ID: %s", id)
 
 	resp, err := db.SolrClient.Select(query)
 	if err != nil {
@@ -103,7 +103,7 @@ func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
 	}
 
 	if len(resp.Results.Collection) == 0 {
-		log.Printf("No se encontró el hotel con ID %s en Solr", id)
+		//log.Printf("No se encontró el hotel con ID %s en Solr", id)
 		return nil, fmt.Errorf("No se encontró el hotel con id: %s en Solr", id)
 	}
 
@@ -119,7 +119,7 @@ func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
 		AvailableRooms: int(doc.Field("available_rooms").([]interface{})[0].(float64)),
 	}
 
-	log.Printf("Hotel obtenido de Solr: %+v", hotel)
+	//log.Printf("Hotel obtenido de Solr: %+v", hotel)
 	return hotel, nil
 }
 

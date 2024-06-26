@@ -177,7 +177,7 @@ func checkDisponibilidad(hotelID string, fechainicio string, fechafinal string) 
 
 func (s *hotelService) GetHotel(id string) (dtos.HotelDTO, errors.ApiError) {
     var hotelDto dtos.HotelDTO
-    log.Printf("Obteniendo hotel con ID: %s", id)
+    //log.Printf("Obteniendo hotel con ID: %s", id)
 
     hotel, err := s.dao.Get(id)
     if err != nil {
@@ -199,7 +199,7 @@ func (s *hotelService) GetHotel(id string) (dtos.HotelDTO, errors.ApiError) {
     hotelDto.Amenities = hotel.Amenities
     hotelDto.AvailableRooms = hotel.AvailableRooms
 
-    log.Printf("Hotel obtenido exitosamente con ID: %s", hotel.ID)
+    //log.Printf("Hotel obtenido exitosamente con ID: %s", hotel.ID)
     return hotelDto, nil
 }
 
@@ -215,7 +215,7 @@ func (s *hotelService) CreateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, error
     hotel.Amenities = hotelDto.Amenities
     hotel.AvailableRooms = hotelDto.AvailableRooms
 
-    log.Printf("Intentando crear el hotel en Solr con datos: %+v", hotel)
+    //log.Printf("Intentando crear el hotel en Solr con datos: %+v", hotel)
 
     err := s.dao.Create(&hotel)
     if err != nil {
