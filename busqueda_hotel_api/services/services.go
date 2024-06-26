@@ -205,6 +205,7 @@ func (s *hotelService) GetHotel(id string) (dtos.HotelDTO, errors.ApiError) {
 
 func (s *hotelService) CreateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, errors.ApiError) {
     var hotel models.Hotel
+
     hotel.ID = hotelDto.ID
     hotel.Name = hotelDto.Name
     hotel.Description = hotelDto.Description
@@ -214,13 +215,14 @@ func (s *hotelService) CreateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, error
     hotel.Amenities = hotelDto.Amenities
     hotel.AvailableRooms = hotelDto.AvailableRooms
 
-    log.Printf("Creando hotel con ID: %s", hotel.ID)
+    log.Printf("Intentando crear el hotel en Solr con datos: %+v", hotel)
 
     err := s.dao.Create(&hotel)
     if err != nil {
-        log.Printf("Error creando el hotel en Solr: %s", err.Error())
-        return hotelDto, errors.NewInternalServerApiError("Error creating hotel", err)
+        log.Printf("Error al crear el hotel en Solr: %s", err.Error())
+        return hotelDto, errors.NewBadRequestApiError(err.Error())
     }
+    hotelDto.ID = hotel.ID
 
     log.Printf("Hotel creado exitosamente en Solr con ID: %s", hotel.ID)
     return hotelDto, nil
