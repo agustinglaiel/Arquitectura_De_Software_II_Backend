@@ -24,6 +24,7 @@ type HotelServiceInterface interface {
 	GetAllHotels() (dtos.HotelsDTO, errors.ApiError)
 	GetHotelsByCiudad(ciudad string) (dtos.HotelsDTO, errors.ApiError)
 	GetDisponibilidad(searchRequest dtos.SearchRequestDTO) ([]dtos.SearchResultDTO, errors.ApiError)
+	DeleteHotel(id string) errors.ApiError
 }
 
 var (
@@ -247,4 +248,12 @@ func (s *hotelService) UpdateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, error
 	hotelDto.ID = hotel.ID
 
 	return hotelDto, nil
+}
+
+func (s *hotelService) DeleteHotel(id string) errors.ApiError {
+    err := s.dao.Delete(id)
+    if err != nil {
+        return errors.NewInternalServerApiError("Error deleting hotel from Solr", err)
+    }
+    return nil
 }

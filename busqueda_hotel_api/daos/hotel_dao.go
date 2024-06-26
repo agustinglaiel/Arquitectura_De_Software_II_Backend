@@ -18,6 +18,7 @@ type HotelDao interface {
 	Update(hotel *models.Hotel) error
 	GetAll() ([]*models.Hotel, error)
 	GetByCity(city string) ([]*models.Hotel, error)
+	Delete(id string) error
 }
 
 type HotelSolrDao struct{}
@@ -213,4 +214,20 @@ func getStringSliceFromInterface(i interface{}) []string {
 		}
 	}
 	return result
+}
+
+func (dao *HotelSolrDao) Delete(id string) error {
+    deleteDocument := map[string]interface{}{
+        "delete": map[string]interface{}{
+            "id": id,
+        },
+    }
+
+    _, err := db.SolrClient.Update(deleteDocument, true)
+    if err != nil {
+        log.Printf("Error al eliminar el hotel en Solr: %s", err.Error())
+        return err
+    }
+
+    return nil
 }
