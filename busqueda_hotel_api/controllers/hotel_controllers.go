@@ -12,8 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetOrInsertByID(action, id string) {
-    log.Printf("Recibido ID del hotel CONTROLLER: %s", id)
+func GetOrInsertByID(id string) {
+    //log.Printf("Recibido ID del hotel CONTROLLER: %s", id)
     url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
 
     resp, err := http.Get(url)
@@ -40,35 +40,18 @@ func GetOrInsertByID(action, id string) {
         return
     }
 
-    log.Printf("Datos del hotel obtenidos de la API de ficha: %+v", hotelResponse)
+    //log.Printf("Datos del hotel obtenidos de la API de ficha: %+v", hotelResponse)
 
     hotelSolr, err := services.HotelService.GetHotel(id)
-
-    if action == "delete" {
-        if err == nil {
-            err = services.HotelService.DeleteHotel(id)
-            if err != nil {
-                log.Printf("Error al eliminar el hotel en Solr: %s", err.Error())
-                return
-            }
-            log.Printf("Hotel eliminado exitosamente en Solr con ID: %s", id)
-        } else {
-            log.Printf("Hotel no encontrado en Solr para eliminar: %s", id)
-        }
-        return
-    }
-
     if err != nil {
         log.Printf("Error al obtener el hotel de Solr: %s", err.Error())
-        if action == "create" || action == "update" {
-            _, err := services.HotelService.CreateHotel(hotelResponse)
-            if err != nil {
-                log.Printf("Error al crear el hotel: %s", err.Error())
-                return
-            }
-            log.Printf("Hotel creado exitosamente en Solr con ID: %s", id)
-        }
-        return
+        _, err := services.HotelService.CreateHotel(hotelResponse)
+		if err != nil {
+			fmt.Println("Error al crear el hotel CONTROLLER: ", err)
+			return
+		}
+		fmt.Println("Hotel nuevo agregado CONTROLLER con id: ", id)
+		return
     }
 
     log.Printf("Hotel encontrado en Solr con ID: %s. Procediendo a actualizar.", id)
@@ -82,10 +65,11 @@ func GetOrInsertByID(action, id string) {
 
     _, err = services.HotelService.UpdateHotel(hotelSolr)
     if err != nil {
-        log.Printf("Error al actualizar el hotel en Solr: %s", err.Error())
+        log.Printf("Error al actualizar el hotel en Solr CONTROLLER: %s", err.Error())
         return
     }
-    log.Printf("Hotel actualizado en Solr con ID: %s", id)
+    log.Printf("Hotel actualizado en Solr CONTROLLER con ID: %s", id)
+    return
 }
 
 func GetHotels(ctx *gin.Context) {

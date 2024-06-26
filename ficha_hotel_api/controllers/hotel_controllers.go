@@ -4,7 +4,6 @@ import (
 	"ficha_hotel_api/dtos"
 	service "ficha_hotel_api/services"
 	"ficha_hotel_api/utils/errors"
-	"ficha_hotel_api/utils/queue"
 	"fmt"
 	"net/http"
 
@@ -123,7 +122,7 @@ func DeleteHotelById(c *gin.Context) {
         return
     }
 
-    queue.Send(id, "delete")
+    //queue.Send(id)
 
     c.JSON(http.StatusNoContent, nil)
 }

@@ -18,7 +18,6 @@ type HotelDao interface {
 	Update(hotel *models.Hotel) error
 	GetAll() ([]*models.Hotel, error)
 	GetByCity(city string) ([]*models.Hotel, error)
-	Delete(id string) error
 }
 
 type HotelSolrDao struct{}
@@ -29,38 +28,26 @@ func NewHotelSolrDAO() HotelDao {
 
 func (dao *HotelSolrDao) Create(hotel *models.Hotel) error {
 	hotelDocument := map[string]interface{}{
-		"id":             hotel.ID,
-		"name":           hotel.Name,
-		"description":    hotel.Description,
-		"city":           hotel.City,
-		"photos":         hotel.Photos,
-		"room_count":     hotel.RoomCount,
-		"amenities":      hotel.Amenities,
-		"available_rooms": hotel.AvailableRooms,
-	}
-
-	log.Printf("Documento del hotel a insertar en Solr: %+v", hotelDocument)
-
-	addUpdate := map[string]interface{}{
-		"add": map[string]interface{}{
-			"doc": hotelDocument,
+		"add": []interface{}{
+			map[string]interface{}{
+				"id":             hotel.ID,
+				"name":           hotel.Name,
+				"description":    hotel.Description,
+				"city":           hotel.City,
+				"photos":         hotel.Photos,
+				"room_count":     hotel.RoomCount,
+				"amenities":      hotel.Amenities,
+				"available_rooms": hotel.AvailableRooms,
+			},
 		},
 	}
 
-	jsonData, err := json.Marshal(addUpdate)
+	_, err := db.SolrClient.Update(hotelDocument, true)
 	if err != nil {
-		log.Printf("Error al convertir a JSON: %s", err.Error())
+		log.Printf("Error al crear hotel en Solr: %s", err.Error())
 		return err
 	}
-	log.Printf("JSON data to insert in Solr: %s", string(jsonData))
-
-	resp, err := db.SolrClient.Update(addUpdate, true)
-	if err != nil {
-		log.Printf("Error al insertar el hotel en Solr: %s", err.Error())
-		return err
-	}
-	log.Printf("Respuesta de Solr: %+v", resp)
-
+	log.Printf("Hotel creado en Solr: %+v", hotel)
 	return nil
 }
 
@@ -111,7 +98,7 @@ func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
 
 	resp, err := db.SolrClient.Select(query)
 	if err != nil {
-		log.Printf("Error en consulta a Solr: %s", err.Error())
+		log.Printf("Error al realizar consulta a Solr: %s", err.Error())
 		return nil, err
 	}
 
@@ -132,6 +119,7 @@ func (dao *HotelSolrDao) Get(id string) (*models.Hotel, error) {
 		AvailableRooms: int(doc.Field("available_rooms").([]interface{})[0].(float64)),
 	}
 
+	log.Printf("Hotel obtenido de Solr: %+v", hotel)
 	return hotel, nil
 }
 
@@ -214,20 +202,4 @@ func getStringSliceFromInterface(i interface{}) []string {
 		}
 	}
 	return result
-}
-
-func (dao *HotelSolrDao) Delete(id string) error {
-    deleteDocument := map[string]interface{}{
-        "delete": map[string]interface{}{
-            "id": id,
-        },
-    }
-
-    _, err := db.SolrClient.Update(deleteDocument, true)
-    if err != nil {
-        log.Printf("Error al eliminar el hotel en Solr: %s", err.Error())
-        return err
-    }
-
-    return nil
 }
