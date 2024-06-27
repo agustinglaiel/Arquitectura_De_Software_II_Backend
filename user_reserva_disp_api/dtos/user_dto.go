@@ -1,12 +1,15 @@
 package dtos
 
-type UserDto struct{
-	ID		int		`json:"id"`
-	FirstName	string		`json:"first_name`
-	LastName	string		`json:"last_name"`
-	Email		string		`json:"Email"`
-	Password	string		`json:"password"`
-	Type		bool		`json:"type"` //True para admin
+type UserDto struct {
+	Id       int    `json:"id"`
+	Name     string `json:"name"`
+	LastName string `json:"last_name"`
+	UserName string `json:"username"`
+	Phone 	 int    `json:"phone"`
+	Address  string `json:"address"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+	Type     bool   `json:"type"`
 }
 
 type UsersDto []UserDto

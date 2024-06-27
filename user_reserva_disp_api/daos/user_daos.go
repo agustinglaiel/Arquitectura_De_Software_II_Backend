@@ -7,53 +7,71 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-
 var Db *gorm.DB
 
-func InsertUser(user models.User) models.User {
-	result := Db.Create(&user)
+func GetUserByUsername(username string)(models.User, error){
+	var user models.User
+	result := Db.Where("user_name = ?", username).First(&user)
 
+	log.Debug("User: ", user)
 	if result.Error != nil {
-		log.Error("")
+		return user, result.Error
 	}
 
-	log.Debug("Usuario Creado: ", user.ID)
-	return user
+	return user, nil
+}
+
+func GetUserByEmail(email string) bool {
+	var user models.User
+	result := Db.Where("email = ?", email).First(&user)
+
+	log.Debug("User: ", user)
+
+	if result.Error != nil {
+		return true // Si no lo encuntra es porque no existe
+	}
+
+	return false
 }
 
 func GetUserById(id int) models.User {
 	var user models.User
 
 	Db.Where("id = ?", id).First(&user)
-	log.Debug("Usuario: ", user)
+	log.Debug("User: ", user)
 
 	return user
 }
 
-/*func GetUserByUsername(username string) models.User {
-	var user models.User
+func CheckUserById(id int) bool {
+	var user models.User 
 
-	Db.Where("user_name = ?", username).First(&user)
-	log.Debug("Usuario: ", user)
+	// realza consulta a la base de datos: (con el id proporcionado como parametro)
+	result := Db.Where("id = ?", id).First(&user)
 
-	return user
-}*/
+	if result.Error != nil {
+		return false
+	}
 
-func GetUserByEmail(email string) (models.User, error) {
-    var user models.User
-    result := Db.Where("email = ?", email).First(&user)
-    if result.Error != nil {
-        return models.User{}, result.Error // Retorna un usuario vacío y el error
-    }
-    return user, nil // Retorna el usuario encontrado y nil como error
+	return true
 }
-
 
 func GetUsers() models.Users {
 	var users models.Users
-
 	Db.Find(&users)
-	log.Debug("Usuarios: ", users)
+
+	log.Debug("Users: ", users)
 
 	return users
+}
+
+func InsertUser(user models.User) models.User {
+	result := Db.Create(&user)
+
+	if result.Error != nil {
+		//TODO Manage Errors
+		log.Error("")
+	}
+	log.Debug("User Created: ", user.Id)
+	return user
 }

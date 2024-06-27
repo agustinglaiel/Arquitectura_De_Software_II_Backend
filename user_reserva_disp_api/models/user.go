@@ -1,12 +1,16 @@
 package models
 
 type User struct {
-	ID        int `json:"id" gorm:"_id,omitempty"`
-	FirstName string `json:"first_name" gorm:"first_name"`
-	LastName  string `json:"last_name" gorm:"last_name"`
-	Email     string `json:"email" gorm:"email"`
-	Password  string `json:"password" gorm:"password"`
-	Type      bool   `json:"type" gorm:"type"` // True para admin
+	Id       int    `gorm:"primaryKey"`
+	Name     string `gorm:"type:varchar(300);not null"`
+	LastName string `gorm:"type:varchar(300);not null"`
+	UserName string `gorm:"type:varchar(200);not null;unique"`
+	Phone 	 int    `gorm:""`
+	Address  string `gorm:"type:varchar(200)"`
+	Password string `gorm:"type:varchar(500);not null"`
+	Email    string `gorm:"type:varchar(320);not null;unique"`
+	Type     bool   `gorm:"not null;default:false"`
 }
 
 type Users []User
+

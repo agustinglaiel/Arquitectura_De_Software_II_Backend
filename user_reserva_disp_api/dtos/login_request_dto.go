@@ -1,6 +1,6 @@
 package dtos
 
-type LoginRequestDto struct {
-    Email    string `json:"email"`
-    Password string `json:"password"`
+type LoginDto struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }

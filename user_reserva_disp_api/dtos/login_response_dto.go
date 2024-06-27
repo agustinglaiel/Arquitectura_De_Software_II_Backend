@@ -1,7 +1,11 @@
 package dtos
 
 type LoginResponseDto struct {
-    Token string `json:"token"`
-    ID    int    `json:"id"`
-    Type  bool   `json:"type"` // True para admin
+	UserId   int    `json:"user_id"`
+	Token    string `json:"token"`
+	Name     string `json:"Name"`
+	LastName string `json:"LastName"`
+	UserName string `json:"UserName"`
+	Email    string `json:"Email"`
+	Type     bool   `json:"type"`
 }
