@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/golang-jwt/jwt v3.2.2+incompatible

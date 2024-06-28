@@ -7,79 +7,101 @@ import (
 	"user_reserva_dispo_api/services"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofiber/fiber/v2/log"
 )
 
-func GetUserById(c *gin.Context){
-	log.Debug("User id to load: " + c.Param("id"))
-
-	id, _ := strconv.Atoi(c.Param("id"))
+// RegisterUser handles the user registration
+func RegisterUser(c *gin.Context) {
 	var userDto dtos.UserDto
+	if err := c.ShouldBindJSON(&userDto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	userDto, err := services.UserService.GetUserById(id)
-
+	result, err := services.UserService.RegisterUser(userDto)
 	if err != nil {
-		c.JSON(err.Status(), err)
+		c.JSON(err.Status(), gin.H{"error": err.Message()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, result)
+}
+
+// LoginUser handles user login
+func LoginUser(c *gin.Context) {
+	var loginDto dtos.LoginRequestDto
+	if err := c.ShouldBindJSON(&loginDto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := services.UserService.LoginUser(loginDto.Username, loginDto.Password)
+	if err != nil {
+		c.JSON(err.Status(), gin.H{"error": err.Message()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+// GetUserById handles fetching a user by their ID
+func GetUserById(c *gin.Context) {
+	userId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	userDto, apiErr := services.UserService.GetUserById(userId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), gin.H{"error": apiErr.Message()})
 		return
 	}
 
 	c.JSON(http.StatusOK, userDto)
 }
 
+// GetUsers handles fetching all users
 func GetUsers(c *gin.Context) {
-	var usersDto dtos.UsersDto
-	usersDto, err := services.UserService.GetUsers()
+    usersDto, apiErr := services.UserService.GetUsers()
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), gin.H{"error": apiErr.Message()})
+        return
+    }
 
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-
-	c.JSON(http.StatusOK, usersDto)
+    c.JSON(http.StatusOK, usersDto)
 }
 
-func UserInsert(c *gin.Context) {
+
+// UpdateUser handles updating user data
+func UpdateUser(c *gin.Context) {
 	var userDto dtos.UserDto
-	err := c.BindJSON(&userDto)
-
-	// Error Parsing json param
-	if err != nil {
-		log.Error(err.Error())
-		c.JSON(http.StatusBadRequest, err.Error())
+	if err := c.ShouldBindJSON(&userDto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	userDto, er := services.UserService.InsertUser(userDto)
-	// Error del Insert
-	if er != nil {
-		c.JSON(er.Status(), er)
+	updatedUser, apiErr := services.UserService.UpdateUser(userDto)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), gin.H{"error": apiErr.Message()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, userDto)
+	c.JSON(http.StatusOK, updatedUser)
 }
 
-func Login(c *gin.Context) {
-	var loginDto dtos.LoginDto
-	er := c.BindJSON(&loginDto)
-
-	if er != nil {
-		log.Error(er.Error())
-		c.JSON(http.StatusBadRequest, er.Error())
-		return
-	}
-	log.Debug(loginDto)
-
-	var loginResponseDto dtos.LoginResponseDto
-	loginResponseDto, err := services.UserService.Login(loginDto)
+// DeleteUser handles the deletion of a user
+func DeleteUser(c *gin.Context) {
+	userId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		if err.Status() == 400 {
-			c.JSON(http.StatusBadRequest, err.Error())
-			return
-		}
-		c.JSON(http.StatusForbidden, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 		return
 	}
 
-	c.JSON(http.StatusOK, loginResponseDto)
+	apiErr := services.UserService.DeleteUser(userId)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), gin.H{"error": apiErr.Message()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
 }

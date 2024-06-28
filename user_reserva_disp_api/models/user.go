@@ -1,16 +1,15 @@
 package models
 
 type User struct {
-	Id       int    `gorm:"primaryKey"`
-	Name     string `gorm:"type:varchar(300);not null"`
-	LastName string `gorm:"type:varchar(300);not null"`
-	UserName string `gorm:"type:varchar(200);not null;unique"`
-	Phone 	 int    `gorm:""`
-	Address  string `gorm:"type:varchar(200)"`
-	Password string `gorm:"type:varchar(500);not null"`
-	Email    string `gorm:"type:varchar(320);not null;unique"`
-	Type     bool   `gorm:"not null;default:false"`
+	ID         int    `gorm:"primaryKey;autoIncrement"`
+	FirstName  string `gorm:"size:255;not null"`
+	LastName   string `gorm:"size:255;not null"`
+	Username   string `gorm:"size:255;not null;unique"`
+	Password   string `gorm:"size:255;not null"`
+	Email      string `gorm:"size:255;not null;unique"`
+	Phone      string `gorm:"size:50"`
+	Address    string `gorm:"size:255"`
+	IsAdmin    bool   `gorm:"default:false"`
 }
 
-type Users []User
-
+type Users []User 
