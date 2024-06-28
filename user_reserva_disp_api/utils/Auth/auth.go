@@ -1,37 +1,56 @@
 package auth
 
 import (
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 var jwtKey = []byte("my_secret_key") // Utiliza una clave más segura y almacénala fuera del código
 
 // GenerateToken genera un token JWT para un usuario
-func GenerateToken(userID int, username string, isAdmin bool) (string, error) {
-	expirationTime := time.Now().Add(72 * time.Hour)
-	claims := &jwt.StandardClaims{
-		Subject:   strconv.Itoa(userID),
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: expirationTime.Unix(),
-		// Puedes añadir más campos personalizados
-	}
+func GenerateToken(userID int, isAdmin bool) (string, error) {
+    expirationTime := time.Now().Add(72 * time.Hour)
+    claims := &jwt.StandardClaims{
+        Subject:   strconv.Itoa(userID),
+        IssuedAt:  time.Now().Unix(),
+        ExpiresAt: expirationTime.Unix(),
+        // Puedes añadir más campos personalizados aquí
+    }
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
-
-	return tokenString, err
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(jwtKey)
 }
 
 // VerifyToken verifica la validez del token proporcionado
 func VerifyToken(tokenStr string) (*jwt.Token, error) {
-	claims := &jwt.StandardClaims{}
+    claims := &jwt.StandardClaims{}
+    token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+        return jwtKey, nil
+    })
+    return token, err
+}
 
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
+// AuthMiddleware es un middleware de Gin para autenticar usando JWT
+func AuthMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        tokenString := c.GetHeader("Authorization")
+        token, err := VerifyToken(tokenString)
+        if err != nil {
+            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+            return
+        }
 
-	return token, err
+        claims, ok := token.Claims.(*jwt.StandardClaims)
+        if !ok || !token.Valid {
+            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+            return
+        }
+
+        c.Set("userID", claims.Subject)
+        c.Next()
+    }
 }

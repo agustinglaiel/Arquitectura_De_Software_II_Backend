@@ -80,7 +80,7 @@ func (s *userService) LoginUser(username, password string) (dtos.LoginResponseDt
     }
 
     // Generar token JWT
-    token, err := auth.GenerateToken(user.ID, user.Username, user.IsAdmin)
+    token, err := auth.GenerateToken(user.ID, user.IsAdmin)
     if err != nil {
         return dtos.LoginResponseDto{}, errors.NewInternalServerApiError("Failed to generate token", err)
     }
