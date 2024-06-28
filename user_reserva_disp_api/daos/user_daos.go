@@ -8,7 +8,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var Db *gorm.DB
+var Db *gorm.DB //ACA VAMOS A TENER UN PROBLEMA (VAMOS A TENER QUE PONER EL DE RESERVA Y EL DE USUARIO EN CARPETAS SINO TIRA ERROR)
 
 func GetUserByUsername(username string) (models.User, error) {
 	var user models.User

@@ -4,10 +4,9 @@ import (
 	"user_reserva_dispo_api/models"
 
 	"github.com/gofiber/fiber/v2/log"
-	"github.com/jinzhu/gorm"
 )
 
-var Db *gorm.DB
+//var Db *gorm.DB
 
 func GetHotelById(id int) models.Hotel{
 	var hotel models.Hotel
