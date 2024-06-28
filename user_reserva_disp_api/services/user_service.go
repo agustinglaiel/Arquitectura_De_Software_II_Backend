@@ -4,7 +4,7 @@ import (
 	"user_reserva_dispo_api/daos"
 	"user_reserva_dispo_api/dtos"
 	"user_reserva_dispo_api/models"
-	auth "user_reserva_dispo_api/utils/Auth"
+	auth "user_reserva_dispo_api/utils/auth"
 	"user_reserva_dispo_api/utils/errors"
 
 	"golang.org/x/crypto/bcrypt"

@@ -54,3 +54,18 @@ func AuthMiddleware() gin.HandlerFunc {
         c.Next()
     }
 }
+
+// IsAdmin verifica si el token pertenece a un administrador
+func IsAdmin(tokenStr string) bool {
+    token, err := VerifyToken(tokenStr)
+    if err != nil {
+        return false
+    }
+    claims, ok := token.Claims.(*jwt.StandardClaims)
+    if !ok || !token.Valid {
+        return false
+    }
+    // Aquí asumimos que el claim "isAdmin" es un booleano que indica si el usuario es administrador o no
+    isAdmin, _ := strconv.ParseBool(claims.Issuer) // Ajustar según cómo se almacena este dato
+    return isAdmin
+}
