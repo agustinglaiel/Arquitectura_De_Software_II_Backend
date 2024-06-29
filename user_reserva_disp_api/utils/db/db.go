@@ -16,7 +16,7 @@ var (
 )
 
 // InitDB inicializa la conexión a la base de datos.
-func init() {
+func InitDB() {
 	// DB Connections Paramters
 	DBName := ""
 	DBUser := ""

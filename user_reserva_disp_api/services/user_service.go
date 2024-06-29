@@ -50,8 +50,8 @@ func (s *userService) RegisterUser(userDto dtos.UserDto) (dtos.UserDto, errors.A
 		Username:  userDto.Username,
 		Password:  string(hashedPassword),
 		Email:     userDto.Email,
-		Phone:     userDto.Phone,
-		Address:   userDto.Address,
+		//Phone:     userDto.Phone,
+		//Address:   userDto.Address,
 		IsAdmin:   userDto.Type,
 	}
 
@@ -110,8 +110,8 @@ func (s *userService) GetUserById(userID int) (dtos.UserDto, errors.ApiError) {
         FirstName: user.FirstName,
         LastName:  user.LastName,
         Username:  user.Username,
-        Phone:     user.Phone,
-        Address:   user.Address,
+        //Phone:     user.Phone,
+        //Address:   user.Address,
         Email:     user.Email,
         Type:      user.IsAdmin,
     }
@@ -132,8 +132,8 @@ func (s *userService) GetUsers() (dtos.UsersDto, errors.ApiError) {
             FirstName: user.FirstName,
             LastName:  user.LastName,
             Username:  user.Username,
-            Phone:     user.Phone,
-            Address:   user.Address,
+            //Phone:     user.Phone,
+            //Address:   user.Address,
             Email:     user.Email,
             Type:      user.IsAdmin,
         }
@@ -153,8 +153,8 @@ func (s *userService) UpdateUser(userDto dtos.UserDto) (dtos.UserDto, errors.Api
         Username:  userDto.Username,
         Password:  userDto.Password, // Considera hashear la contraseña antes de actualizar
         Email:     userDto.Email,
-        Phone:     userDto.Phone,
-        Address:   userDto.Address,
+        //Phone:     userDto.Phone,
+        //Address:   userDto.Address,
         IsAdmin:   userDto.Type,
     }
 
@@ -170,8 +170,8 @@ func (s *userService) UpdateUser(userDto dtos.UserDto) (dtos.UserDto, errors.Api
         FirstName: updatedUser.FirstName,
         LastName:  updatedUser.LastName,
         Username:  updatedUser.Username,
-        Phone:     updatedUser.Phone,
-        Address:   updatedUser.Address,
+        //Phone:     updatedUser.Phone,
+        //Address:   updatedUser.Address,
         Email:     updatedUser.Email,
         Type:      updatedUser.IsAdmin,
     }
