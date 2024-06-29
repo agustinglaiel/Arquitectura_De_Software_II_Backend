@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"user_reserva_dispo_api/controllers"
 	"user_reserva_dispo_api/utils/auth"
@@ -24,7 +23,9 @@ func AdminMiddleware() gin.HandlerFunc {
 func MapUrls(router *gin.Engine) {
 	router.POST("/users/register", controllers.RegisterUser)  // Registro de usuarios
 	router.POST("/users/login", controllers.LoginUser)        // Login de usuarios
+	router.DELETE("/:id", controllers.DeleteUser)
 
+	/*
 	// Rutas protegidas para acciones de administrador
 	adminRoutes := router.Group("/users")
 	adminRoutes.Use(auth.AuthMiddleware(), AdminMiddleware())
@@ -35,5 +36,5 @@ func MapUrls(router *gin.Engine) {
 		adminRoutes.DELETE("/:id", controllers.DeleteUser)       // Eliminar usuario
 	}
 
-	fmt.Println("Finishing mappings configurations")
+	fmt.Println("Finishing mappings configurations")*/
 }
