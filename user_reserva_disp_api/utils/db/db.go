@@ -7,6 +7,7 @@ import (
 	userDao "user_reserva_dispo_api/daos"
 
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,25 +17,31 @@ var (
 )
 
 // InitDB inicializa la conexión a la base de datos.
-func InitDB() {
-	// DB Connections Paramters
-	DBName := ""
-	DBUser := ""
-	DBPass := ""
-	DBHost := ""
-	// ------------------------
+func InitDB() error {
+	// Parámetros de conexión a la base de datos
+	DBName := "tpintegrador"
+	DBUser := "tpintegrador"
+	DBPass := "tpintegrador"
+	DBHost := "localhost" // Cambia a la IP correcta si es necesario
+	DBPort := "3307"      // Puerto mapeado del contenedor MySQL en el host
 
-	db, err = gorm.Open("mysql", DBUser+":"+DBPass+"@tcp("+DBHost+":3306)/"+DBName+"?charset=utf8&parseTime=True")
+	// Formatea la cadena de conexión
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DBUser, DBPass, DBHost, DBPort, DBName)
 
-	if err != nil{
-		log.Info("La conexión no se pudo abrir")
-		log.Fatal(err)
-	} else {
-		log.Info("Conexión establecida correctamente")
+	// Abre la conexión a la base de datos
+	db, err = gorm.Open("mysql", dsn)
+	if err != nil {
+		log.Fatalf("Error al abrir la conexión a la base de datos: %v", err)
+		return err
 	}
 
+	log.Println("Conexión establecida correctamente")
+
+	// Asigna la conexión a los DAOs
 	userDao.Db = db
 	reservaDao.Db = db
+
+	return nil
 }
 
 // CloseDB cierra la conexión de la base de datos.
