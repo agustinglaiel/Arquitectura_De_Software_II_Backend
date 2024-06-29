@@ -14,33 +14,33 @@ var MongoDb *mongo.Database
 var client *mongo.Client
 
 func InitDB() error {
-  uri := os.Getenv("MONGODB_URI")
-  if uri == "" {
-    uri = "mongodb://root:root@localhost:27017"
-  }
+	uri := os.Getenv("localhost:27017")
+	if uri == "" {
+		uri = "mongodb://root:root@localhost:27017"
+	}
 
-  clientOpts := options.Client().ApplyURI(uri)
-  cli, err := mongo.Connect(context.TODO(), clientOpts)
-  client = cli
-  if err != nil {
-    return err
-  }
+	clientOpts := options.Client().ApplyURI(uri)
+	cli, err := mongo.Connect(context.TODO(), clientOpts)
+	client = cli
+	if err != nil {
+		return err
+	}
 
-  MongoDb = client.Database("arqui_de_software_2")
+	MongoDb = client.Database("arqui_de_software_2")
 
-  dbNames, err := client.ListDatabaseNames(context.TODO(), bson.M{})
-  if err != nil {
-    return err
-  }
+	dbNames, err := client.ListDatabaseNames(context.TODO(), bson.M{})
+	if err != nil {
+		return err
+	}
 
-  fmt.Println("Available databases:")
-  fmt.Println(dbNames)
+	fmt.Println("Available databases:")
+	fmt.Println(dbNames)
 
-  return nil
+	return nil
 }
 
 func DisconnectDB() {
-  if client != nil {
-    client.Disconnect(context.TODO())
-  }
+	if client != nil {
+		client.Disconnect(context.TODO())
+	}
 }

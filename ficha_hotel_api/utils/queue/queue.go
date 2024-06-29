@@ -23,11 +23,11 @@ func failOnError(err error, msg string) {
 
 func Init() {
 	var err error
-	rabbitMQURL := os.Getenv("RABBITMQ_URL")
+	rabbitMQURL := os.Getenv("localhost:5672")
 	if rabbitMQURL == "" {
 		rabbitMQURL = "amqp://guest:guest@localhost:5672/"
 	}
-	
+
 	conn, err = amqp.Dial(rabbitMQURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
 
