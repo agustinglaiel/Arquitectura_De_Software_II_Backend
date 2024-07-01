@@ -12,7 +12,7 @@ var Db *gorm.DB //ACA VAMOS A TENER UN PROBLEMA (VAMOS A TENER QUE PONER EL DE R
 
 func GetUserByUsername(username string) (models.User, error) {
 	var user models.User
-	result := Db.Where("user_name = ?", username).First(&user)
+	result := Db.Where("username = ?", username).First(&user)
 	if result.Error != nil {
 		log.Debug("Error retrieving user by username: %s", result.Error)
 		return user, errors.NewApiError("User not found", "not_found", 404, nil)
@@ -42,7 +42,6 @@ func GetUserById(id int) (models.User, error) {
 	}
 	return user, nil
 }
-
 
 func CheckUserById(id int) (bool, error) {
 	var user models.User
@@ -74,19 +73,19 @@ func InsertUser(user models.User) (models.User, error) {
 }
 
 func UpdateUser(user models.User) (models.User, error) {
-    result := Db.Save(&user)
-    if result.Error != nil {
-        log.Debug("Error updating user: %s", result.Error)
-        return user, errors.NewInternalServerApiError("Error updating user", result.Error)
-    }
-    return user, nil
+	result := Db.Save(&user)
+	if result.Error != nil {
+		log.Debug("Error updating user: %s", result.Error)
+		return user, errors.NewInternalServerApiError("Error updating user", result.Error)
+	}
+	return user, nil
 }
 
 func DeleteUser(userID int) error {
-    result := Db.Delete(&models.User{}, userID)
-    if result.Error != nil {
-        log.Debug("Error deleting user: %s", result.Error)
-        return errors.NewInternalServerApiError("Error deleting user", result.Error)
-    }
-    return nil
+	result := Db.Delete(&models.User{}, userID)
+	if result.Error != nil {
+		log.Debug("Error deleting user: %s", result.Error)
+		return errors.NewInternalServerApiError("Error deleting user", result.Error)
+	}
+	return nil
 }

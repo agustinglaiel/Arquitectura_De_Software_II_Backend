@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"user_reserva_dispo_api/dtos"
@@ -16,7 +17,7 @@ func RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	log.Println(userDto)
 	result, err := services.UserService.RegisterUser(userDto)
 	if err != nil {
 		c.JSON(err.Status(), gin.H{"error": err.Message()})
@@ -62,15 +63,14 @@ func GetUserById(c *gin.Context) {
 
 // GetUsers handles fetching all users
 func GetUsers(c *gin.Context) {
-    usersDto, apiErr := services.UserService.GetUsers()
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), gin.H{"error": apiErr.Message()})
-        return
-    }
+	usersDto, apiErr := services.UserService.GetUsers()
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), gin.H{"error": apiErr.Message()})
+		return
+	}
 
-    c.JSON(http.StatusOK, usersDto)
+	c.JSON(http.StatusOK, usersDto)
 }
-
 
 // UpdateUser handles updating user data
 func UpdateUser(c *gin.Context) {

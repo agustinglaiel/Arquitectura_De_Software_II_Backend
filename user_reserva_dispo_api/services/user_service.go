@@ -52,7 +52,7 @@ func (s *userService) RegisterUser(userDto dtos.UserDto) (dtos.UserDto, errors.A
 		Email:     userDto.Email,
 		//Phone:     userDto.Phone,
 		//Address:   userDto.Address,
-		IsAdmin: userDto.Type,
+
 	}
 
 	// Insertamos el usuario en la base de datos
@@ -93,7 +93,6 @@ func (s *userService) LoginUser(username, password string) (dtos.LoginResponseDt
 		LastName: user.LastName,
 		Username: user.Username,
 		Email:    user.Email,
-		Type:     user.IsAdmin,
 	}
 
 	return response, nil
@@ -113,7 +112,6 @@ func (s *userService) GetUserById(userID int) (dtos.UserDto, errors.ApiError) {
 		//Phone:     user.Phone,
 		//Address:   user.Address,
 		Email: user.Email,
-		Type:  user.IsAdmin,
 	}
 
 	return userDto, nil
@@ -135,7 +133,6 @@ func (s *userService) GetUsers() (dtos.UsersDto, errors.ApiError) {
 			//Phone:     user.Phone,
 			//Address:   user.Address,
 			Email: user.Email,
-			Type:  user.IsAdmin,
 		}
 		usersDto = append(usersDto, userDto)
 	}
@@ -154,7 +151,7 @@ func (s *userService) UpdateUser(userDto dtos.UserDto) (dtos.UserDto, errors.Api
 		Email:     userDto.Email,
 		//Phone:     userDto.Phone,
 		//Address:   userDto.Address,
-		IsAdmin: userDto.Type,
+
 	}
 
 	// Actualizar usuario en la base de datos
@@ -172,7 +169,6 @@ func (s *userService) UpdateUser(userDto dtos.UserDto) (dtos.UserDto, errors.Api
 		//Phone:     updatedUser.Phone,
 		//Address:   updatedUser.Address,
 		Email: updatedUser.Email,
-		Type:  updatedUser.IsAdmin,
 	}
 
 	return updatedUserDto, nil
