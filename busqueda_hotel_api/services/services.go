@@ -176,56 +176,56 @@ func checkDisponibilidad(hotelID string, fechainicio string, fechafinal string) 
 }
 
 func (s *hotelService) GetHotel(id string) (dtos.HotelDTO, errors.ApiError) {
-    var hotelDto dtos.HotelDTO
-    //log.Printf("Obteniendo hotel con ID: %s", id)
+	var hotelDto dtos.HotelDTO
+	//log.Printf("Obteniendo hotel con ID: %s", id)
 
-    hotel, err := s.dao.Get(id)
-    if err != nil {
-        log.Printf("Error al obtener hotel con ID %s: %s", id, err.Error())
-        return hotelDto, errors.NewInternalServerApiError("Error fetching hotel", err)
-    }
+	hotel, err := s.dao.Get(id)
+	if err != nil {
+		log.Printf("Error al obtener hotel con ID %s: %s", id, err.Error())
+		return hotelDto, errors.NewInternalServerApiError("Error fetching hotel", err)
+	}
 
-    if hotel == nil || hotel.ID == "" {
-        log.Printf("No se encontró el hotel con ID %s", id)
-        return hotelDto, errors.NewNotFoundApiError("Hotel not found")
-    }
+	if hotel == nil || hotel.ID == "" {
+		log.Printf("No se encontró el hotel con ID %s", id)
+		return hotelDto, errors.NewNotFoundApiError("Hotel not found")
+	}
 
-    hotelDto.ID = hotel.ID
-    hotelDto.Name = hotel.Name
-    hotelDto.Description = hotel.Description
-    hotelDto.City = hotel.City
-    hotelDto.Photos = hotel.Photos
-    hotelDto.RoomCount = hotel.RoomCount
-    hotelDto.Amenities = hotel.Amenities
-    hotelDto.AvailableRooms = hotel.AvailableRooms
+	hotelDto.ID = hotel.ID
+	hotelDto.Name = hotel.Name
+	hotelDto.Description = hotel.Description
+	hotelDto.City = hotel.City
+	hotelDto.Photos = hotel.Photos
+	hotelDto.RoomCount = hotel.RoomCount
+	hotelDto.Amenities = hotel.Amenities
+	hotelDto.AvailableRooms = hotel.AvailableRooms
 
-    //log.Printf("Hotel obtenido exitosamente con ID: %s", hotel.ID)
-    return hotelDto, nil
+	//log.Printf("Hotel obtenido exitosamente con ID: %s", hotel.ID)
+	return hotelDto, nil
 }
 
 func (s *hotelService) CreateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, errors.ApiError) {
-    var hotel models.Hotel
+	var hotel models.Hotel
 
-    hotel.ID = hotelDto.ID
-    hotel.Name = hotelDto.Name
-    hotel.Description = hotelDto.Description
-    hotel.City = hotelDto.City
-    hotel.Photos = hotelDto.Photos
-    hotel.RoomCount = hotelDto.RoomCount
-    hotel.Amenities = hotelDto.Amenities
-    hotel.AvailableRooms = hotelDto.AvailableRooms
+	hotel.ID = hotelDto.ID
+	hotel.Name = hotelDto.Name
+	hotel.Description = hotelDto.Description
+	hotel.City = hotelDto.City
+	hotel.Photos = hotelDto.Photos
+	hotel.RoomCount = hotelDto.RoomCount
+	hotel.Amenities = hotelDto.Amenities
+	hotel.AvailableRooms = hotelDto.AvailableRooms
 
-    //log.Printf("Intentando crear el hotel en Solr con datos: %+v", hotel)
+	//log.Printf("Intentando crear el hotel en Solr con datos: %+v", hotel)
 
-    err := s.dao.Create(&hotel)
-    if err != nil {
-        log.Printf("Error al crear el hotel en Solr: %s", err.Error())
-        return hotelDto, errors.NewBadRequestApiError(err.Error())
-    }
-    hotelDto.ID = hotel.ID
+	err := s.dao.Create(&hotel)
+	if err != nil {
+		log.Printf("Error al crear el hotel en Solr: %s", err.Error())
+		return hotelDto, errors.NewBadRequestApiError(err.Error())
+	}
+	hotelDto.ID = hotel.ID
 
-    log.Printf("Hotel creado exitosamente en Solr con ID: %s", hotel.ID)
-    return hotelDto, nil
+	log.Printf("Hotel creado exitosamente en Solr con ID: %s", hotel.ID)
+	return hotelDto, nil
 }
 
 func (s *hotelService) UpdateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, errors.ApiError) {
@@ -248,5 +248,3 @@ func (s *hotelService) UpdateHotel(hotelDto dtos.HotelDTO) (dtos.HotelDTO, error
 
 	return hotelDto, nil
 }
-
-

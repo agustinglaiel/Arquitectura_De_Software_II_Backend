@@ -8,68 +8,69 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetOrInsertByID(id string) {
-    //log.Printf("Recibido ID del hotel CONTROLLER: %s", id)
-    url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
+	//log.Printf("Recibido ID del hotel CONTROLLER: %s", id)
+	url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
 
-    resp, err := http.Get(url)
-    if err != nil {
-        log.Printf("Error al hacer la solicitud HTTP: %s", err.Error())
-        return
-    }
-    defer resp.Body.Close()
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Printf("Error al hacer la solicitud HTTP: %s", err.Error())
+		return
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != http.StatusOK {
-        log.Printf("La solicitud no fue exitosa. Código de respuesta: %d", resp.StatusCode)
-        return
-    }
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("La solicitud no fue exitosa. Código de respuesta: %d", resp.StatusCode)
+		return
+	}
 
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        log.Printf("Error al leer la respuesta HTTP: %s", err.Error())
-        return
-    }
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error al leer la respuesta HTTP: %s", err.Error())
+		return
+	}
 
-    var hotelResponse dtos.HotelDTO
-    if err := json.Unmarshal(body, &hotelResponse); err != nil {
-        log.Printf("Error al deserializar la respuesta: %s", err.Error())
-        return
-    }
+	var hotelResponse dtos.HotelDTO
+	if err := json.Unmarshal(body, &hotelResponse); err != nil {
+		log.Printf("Error al deserializar la respuesta: %s", err.Error())
+		return
+	}
 
-    //log.Printf("Datos del hotel obtenidos de la API de ficha: %+v", hotelResponse)
+	//log.Printf("Datos del hotel obtenidos de la API de ficha: %+v", hotelResponse)
 
-    hotelSolr, err := services.HotelService.GetHotel(id)
-    if err != nil {
-        log.Printf("Error al obtener el hotel de Solr: %s", err.Error())
-        _, err := services.HotelService.CreateHotel(hotelResponse)
+	hotelSolr, err := services.HotelService.GetHotel(id)
+	if err != nil {
+		log.Printf("Error al obtener el hotel de Solr: %s", err.Error())
+		_, err := services.HotelService.CreateHotel(hotelResponse)
 		if err != nil {
 			fmt.Println("Error al crear el hotel CONTROLLER: ", err)
 			return
 		}
 		fmt.Println("Hotel nuevo agregado CONTROLLER con id: ", id)
 		return
-    }
+	}
 
-    //log.Printf("Hotel encontrado en Solr con ID: %s. Procediendo a actualizar.", id)
-    hotelSolr.Name = hotelResponse.Name
-    hotelSolr.Description = hotelResponse.Description
-    hotelSolr.City = hotelResponse.City
-    hotelSolr.Photos = hotelResponse.Photos
-    hotelSolr.Amenities = hotelResponse.Amenities
-    hotelSolr.RoomCount = hotelResponse.RoomCount
-    hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
+	//log.Printf("Hotel encontrado en Solr con ID: %s. Procediendo a actualizar.", id)
+	hotelSolr.Name = hotelResponse.Name
+	hotelSolr.Description = hotelResponse.Description
+	hotelSolr.City = hotelResponse.City
+	hotelSolr.Photos = hotelResponse.Photos
+	hotelSolr.Amenities = hotelResponse.Amenities
+	hotelSolr.RoomCount = hotelResponse.RoomCount
+	hotelSolr.AvailableRooms = hotelResponse.AvailableRooms
 
-    _, err = services.HotelService.UpdateHotel(hotelSolr)
-    if err != nil {
-        log.Printf("Error al actualizar el hotel en Solr CONTROLLER: %s", err.Error())
-        return
-    }
-    log.Printf("Hotel actualizado en Solr CONTROLLER con ID: %s", id)
-    return
+	_, err = services.HotelService.UpdateHotel(hotelSolr)
+	if err != nil {
+		log.Printf("Error al actualizar el hotel en Solr CONTROLLER: %s", err.Error())
+		return
+	}
+	log.Printf("Hotel actualizado en Solr CONTROLLER con ID: %s", id)
+	return
 }
 
 func GetHotels(ctx *gin.Context) {
@@ -117,7 +118,6 @@ func GetDisponibilidad(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, hotelsDto)
 }
-
 
 func GetHotel(ctx *gin.Context) {
 	hotelID := ctx.Param("id")
@@ -181,4 +181,15 @@ func UpdateHotel(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Hotel actualizado con éxito"})
+}
+
+func DeleteHotel(ctx *gin.Context) {
+	_, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	//err = services.HotelService.DeleteHotel(userId)
+
 }
