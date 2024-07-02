@@ -23,7 +23,7 @@ func GetHotelById(c *gin.Context) {
 		return
 	}
 
-	rateLimiter <- true 
+	rateLimiter <- true
 	hotelDto, err := service.HotelService.GetHotelById(id)
 	<-rateLimiter
 
@@ -35,7 +35,7 @@ func GetHotelById(c *gin.Context) {
 	c.JSON(http.StatusOK, hotelDto)
 }
 
-func InsertHotel(c *gin.Context){
+func InsertHotel(c *gin.Context) {
 	var hotelDto dtos.HotelDto
 	err := c.BindJSON(&hotelDto)
 
@@ -55,7 +55,7 @@ func InsertHotel(c *gin.Context){
 	c.JSON(http.StatusCreated, hotelDto)
 }
 
-func UpdateHotelById(c *gin.Context){
+func UpdateHotelById(c *gin.Context) {
 	var hotelDto dtos.HotelDto
 	err := c.BindJSON(&hotelDto)
 
@@ -105,24 +105,24 @@ func GetHotels(c *gin.Context) {
 }
 
 func DeleteHotelById(c *gin.Context) {
-    id := c.Param("id")
+	id := c.Param("id")
 
-    if len(rateLimiter) == cap(rateLimiter) {
-        apiErr := errors.NewTooManyRequestsError("too many requests")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	if len(rateLimiter) == cap(rateLimiter) {
+		apiErr := errors.NewTooManyRequestsError("too many requests")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    rateLimiter <- true
-    err := service.HotelService.DeleteHotelById(id)
-    <-rateLimiter
+	rateLimiter <- true
+	err := service.HotelService.DeleteHotelById(id)
+	<-rateLimiter
 
-    if err != nil {
-        c.JSON(err.Status(), err)
-        return
-    }
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
 
-    //queue.Send(id)
+	//queue.Send(id)
 
-    c.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusNoContent, nil)
 }

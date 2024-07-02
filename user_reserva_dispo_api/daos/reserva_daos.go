@@ -1,6 +1,7 @@
 package daos
 
 import (
+	"log"
 	"time"
 	"user_reserva_dispo_api/models"
 	"user_reserva_dispo_api/utils/errors"
@@ -66,11 +67,12 @@ func GetAllReservations() ([]models.Reservation, errors.ApiError) {
 }
 
 // CheckAvailability verifica la disponibilidad para un hotel en fechas específicas
-func CheckAvailability(hotelID int, startDate, endDate time.Time) (bool, errors.ApiError) {
-	var count int
-	result := Db.Model(&models.Reservation{}).Where("hotel_id = ? AND start_date <= ? AND end_date >= ?", hotelID, endDate, startDate).Count(&count)
-	if result.Error != nil {
-		return false, errors.NewInternalServerApiError("Failed to check availability", result.Error)
+func CheckAvailability(hotelID string, startDate, endDate time.Time) (models.Reservations, errors.ApiError) {
+
+	var result models.Reservations
+	Db.Where("? < end_date AND hotel_id = ? ", startDate, hotelID).Find(&result)
+	if Db.Error != nil {
+		log.Fatal(Db.Error.Error())
 	}
-	return count == 0, nil // Retorna true si no hay reservas que se superpongan
+	return result, nil // Retorna true si no hay reservas que se superpongan
 }

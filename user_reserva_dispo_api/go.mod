@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/jinzhu/gorm v1.9.16
@@ -27,6 +28,7 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
