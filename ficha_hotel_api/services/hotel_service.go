@@ -39,7 +39,7 @@ func (s *hotelService) GetHotelById(id string) (dtos.HotelDto, errors.ApiError) 
 	hotelDto.ID = hotel.ID.Hex()
 	hotelDto.Name = hotel.Name
 	hotelDto.Description = hotel.Description
-	hotelDto.Photos = hotel.Photos
+	//hotelDto.Photos = hotel.Photos
 	hotelDto.Amenities = hotel.Amenities
 	hotelDto.RoomCount = hotel.RoomCount
 	hotelDto.City = hotel.City
@@ -53,7 +53,7 @@ func (s *hotelService) InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, error
 
 	hotel.Name = hotelDto.Name
 	hotel.Description = hotelDto.Description
-	hotel.Photos = hotelDto.Photos
+	//hotel.Photos = hotelDto.Photos
 	hotel.Amenities = hotelDto.Amenities
 	hotel.RoomCount = hotelDto.RoomCount
 	hotel.City = hotelDto.City
@@ -81,7 +81,7 @@ func (s *hotelService) UpdateHotelById(id string, hotelDto dtos.HotelDto) (dtos.
 
 	hotel.Name = hotelDto.Name
 	hotel.Description = hotelDto.Description
-	hotel.Photos = hotelDto.Photos
+	//hotel.Photos = hotelDto.Photos
 	hotel.Amenities = hotelDto.Amenities
 	hotel.RoomCount = hotelDto.RoomCount
 	hotel.City = hotelDto.City
@@ -107,7 +107,7 @@ func (s *hotelService) GetHotels() ([]dtos.HotelDto, errors.ApiError) {
 			ID:             hotel.ID.Hex(),
 			Name:           hotel.Name,
 			Description:    hotel.Description,
-			Photos:         hotel.Photos,
+			//Photos:         hotel.Photos,
 			Amenities:      hotel.Amenities,
 			RoomCount:      hotel.RoomCount,
 			City:           hotel.City,

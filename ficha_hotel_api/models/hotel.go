@@ -6,7 +6,7 @@ type Hotel struct {
 	ID             primitive.ObjectID   `bson:"_id"`
 	Name           string   `bson:"name"`
 	Description    string   `bson:"description"`
-	Photos         []string `bson:"photos"`
+	Images         []Image  `bson:"Images"`
 	Amenities      []string `bson:"amenities"`
 	RoomCount      int      `bson:"room_count"`
 	City           string   `bson:"city"`

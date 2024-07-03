@@ -53,7 +53,7 @@ func UpdateHotel(hotel models.Hotel) models.Hotel {
 		"$set": bson.M{
 			"name":            hotel.Name,
 			"description":     hotel.Description,
-			"photos":          hotel.Photos,
+			//"photos":          hotel.Photos,
 			"amenities":       hotel.Amenities,
 			"room_count":      hotel.RoomCount,
 			"city":            hotel.City,

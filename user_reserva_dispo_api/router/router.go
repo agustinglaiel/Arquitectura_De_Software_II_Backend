@@ -30,8 +30,8 @@ func MapUrls(router *gin.Engine) {
 	routerAdmin.Use(auth.AdminTokenMiddleware())
 
 	router.GET("/reserva/:StartDate/:EndDate/:HotelID", controllers.ComprobaDispReserva)
-	router.POST("/users/register", controllers.RegisterUser) // Registro de usuarios
-	router.POST("/users/login", controllers.LoginUser)       // Login de usuarios
+	router.POST("/register", controllers.RegisterUser) // Registro de usuarios
+	router.POST("/login", controllers.LoginUser)       // Login de usuarios
 	router.DELETE("/:id", controllers.DeleteUser)
 
 	///////////Admin Rutas///////////////

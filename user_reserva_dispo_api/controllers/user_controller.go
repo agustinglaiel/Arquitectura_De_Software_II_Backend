@@ -35,8 +35,11 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 
+	//log.Println(loginDto)
+	
 	token, err := services.UserService.LoginUser(loginDto.Username, loginDto.Password)
 	if err != nil {
+		log.Println(err.Message())
 		c.JSON(err.Status(), gin.H{"error": err.Message()})
 		return
 	}
