@@ -1,7 +1,9 @@
 package dtos
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type ImageDto struct {
-	HotelId string `json:"hotel_id"`
+	HotelId primitive.ObjectID `json:"hotel_id"`
 	Data    []byte
 }
 

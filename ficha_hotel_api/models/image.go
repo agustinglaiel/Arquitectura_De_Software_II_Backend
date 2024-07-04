@@ -1,10 +1,12 @@
 package models
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Image struct {
-	Id      int    `gorm:"primaryKey"`
-	Imagen  []byte `gorm:"type:longblob;not null"`
-	HotelID string    `gorm:"not null"`
-	Hotel   Hotel  `gorm:"foreignKey:HotelID"`
+	Id      primitive.ObjectID `bson:"_id"`
+	Imagen  []byte             `bson:"imagen;type:binary"`
+	HotelID primitive.ObjectID `bson:"hotel_id"`
+	Hotel   *Hotel             `bson:"hotel,inline"` // Si deseas embeber los detalles del hotel
 }
 
 type Images []Image
