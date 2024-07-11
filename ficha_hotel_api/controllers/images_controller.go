@@ -23,10 +23,10 @@ func InsertImage(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Error al leer el cuerpo de la solicitud: " + err.Error()})
         return
     }
-
-    hotelId, err := primitive.ObjectIDFromHex(c.Param("idHotel"))
+    //log.Println()
+    hotelId, err := primitive.ObjectIDFromHex(c.Param("id"))
     if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "ID de hotel inválido: " + err.Error()})
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ID de hotel inválido BOLUDON: " + err.Error()})
         return
     }
 
@@ -48,7 +48,7 @@ func InsertImage(c *gin.Context) {
 }
 
 func GetImagesByHotelId(c *gin.Context) {
-	hotelId, err := primitive.ObjectIDFromHex(c.Param("idHotel"))
+	hotelId, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de hotel inválido: " + err.Error()})
 		return
