@@ -1,18 +1,75 @@
 package controllers
 
 import (
+	"busqueda_hotel_api/config"
+	client "busqueda_hotel_api/daos"
 	"busqueda_hotel_api/dtos"
 	"busqueda_hotel_api/services"
-	"encoding/json"
+	con "busqueda_hotel_api/utils/db"
+	"busqueda_hotel_api/utils/errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
+var (
+	Solr = services.NewSolrServiceImpl(
+		(*client.SolrClient)(con.NewSolrClient(config.SOLRHOST, config.SOLRPORT, config.SOLRCOLLECTION)),
+	)
+)
+
+func GetQuery(c *gin.Context){
+	var hotelsDto dtos.HotelsDTO
+	query := c.Param("searchQuery")
+
+	hotelsDto, err := Solr.GetQuery(query)
+	if err != nil{
+		c.JSON(http.StatusBadRequest, hotelsDto)
+		return
+	}
+	log.Debug(hotelsDto)
+	c.JSON(http.StatusOK, hotelsDto)
+}
+
+func GetQueryAllFields(c *gin.Context) {
+	var hotelsDto dtos.HotelsDTO
+	// query := c.Param("searchQuery")
+	query := "*:*"
+
+	hotelsDto, err := Solr.GetQueryAllFields(query)
+	if err != nil {
+		log.Debug(err)
+		c.JSON(http.StatusBadRequest, hotelsDto)
+		return
+	}
+
+	c.JSON(http.StatusOK, hotelsDto)
+}
+
+func AddFromId(id string) error {   // agregar e.NewBadResquest para manejar el error
+	err := Solr.AddFromId(id)
+	if err != nil {
+		errors.NewBadRequestApiError("Error adding hotel to Solr")
+		return err
+	}
+	fmt.Println(http.StatusOK)
+	return nil
+}
+
+func Delete(id string) error {
+	err := Solr.Delete(id)
+	if err != nil {
+		errors.NewBadRequestApiError("Error deleting hotel from Solr")
+		return err
+	}
+	fmt.Println(http.StatusOK)
+	return nil
+}
+
+
+/*
 func GetOrInsertByID(id string) {
 	//log.Printf("Recibido ID del hotel CONTROLLER: %s", id)
 	url := fmt.Sprintf("http://localhost:8080/hotel/%s", id)
@@ -193,3 +250,4 @@ func DeleteHotel(ctx *gin.Context) {
 	//err = services.HotelService.DeleteHotel(userId)
 
 }
+*/

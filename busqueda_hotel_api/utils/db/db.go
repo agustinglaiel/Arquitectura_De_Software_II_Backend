@@ -1,38 +1,22 @@
 package db
 
 import (
-	"log"
+	"fmt"
 
-	solr "github.com/rtt/Go-Solr"
+	logger "github.com/sirupsen/logrus"
+	"github.com/stevenferrer/solr-go"
 )
 
-var SolrClient *solr.Connection
-
-func InitDB() error {
-    var err error
-    SolrClient, err = solr.Init("localhost", 8983, "busqueda_hotel-core")
-    if err != nil {
-        log.Println("Error al conectar con Solr:", err)
-        return err
-    }
-    log.Println("Conexión a Solr exitosa")
-    return nil
+type SolrClient struct {
+	Client     *solr.JSONClient
+	Collection string
 }
 
-func Test() error {
-    query := &solr.Query{
-        Params: solr.URLParamMap{
-            "q": []string{"*:*"},
-        },
-        Rows: 10,
-    }
-    resp, err := SolrClient.Select(query)
-    if err != nil {
-        log.Println("Error al realizar la consulta en Solr:", err)
-        return err
-    }
-    for _, doc := range resp.Results.Collection {
-        log.Printf("Documento en Solr: %v\n", doc)
-    }
-    return nil
+func NewSolrClient(host string, port int, collection string) *SolrClient {
+	logger.Debug(fmt.Sprintf("%s:%d", host, port))
+	Client := solr.NewJSONClient(fmt.Sprintf("http://%s:%d", host, port))
+	return &SolrClient{
+		Client:     Client,
+		Collection: collection,
+	}
 }

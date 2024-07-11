@@ -2,7 +2,6 @@ package main
 
 import (
 	"busqueda_hotel_api/router"
-	"busqueda_hotel_api/utils/db"
 	"busqueda_hotel_api/utils/queue"
 	"fmt"
 	"log"
@@ -12,10 +11,10 @@ import (
 
 func main() {
 	// Initialize the Solr connection
-	err := db.InitDB()
+	/*err := db.InitDB()
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
-	}
+	}*/
 
 	// Initialize the RabbitMQ consumer
 	go queue.StartReceiving()

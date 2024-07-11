@@ -1,15 +1,14 @@
 package router
 
 import (
-	"busqueda_hotel_api/controllers"
+	solrController "busqueda_hotel_api/controllers"
 	"fmt"
-	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func MapUrls(router *gin.Engine) {
+	/*
 	routerAdmin := router.Group("/admin")
 	router.Use(cors.New(cors.Config{
 
@@ -28,6 +27,8 @@ func MapUrls(router *gin.Engine) {
 	router.GET("/hotels", controllers.GetHotels)
 	router.GET("/hotels/ciudad/:ciudad", controllers.GetHotelsByCiudad)
 	router.GET("/hotels/disponibilidad/:ciudad/:fechainicio/:fechafinal", controllers.GetDisponibilidad)
-
+	*/
+	router.GET("/busqueda_hotel_api/search=:searchQuery", solrController.GetQuery)
+	router.GET("/busqueda_hotel_api/searchAll=:searchQuery", solrController.GetQueryAllFields)
 	fmt.Println("Finishing mappings configurations")
 }

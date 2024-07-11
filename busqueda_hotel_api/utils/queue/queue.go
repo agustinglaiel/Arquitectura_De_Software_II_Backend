@@ -2,15 +2,16 @@ package queue
 
 import (
 	"busqueda_hotel_api/controllers"
+	"busqueda_hotel_api/dtos"
+	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/streadway/amqp"
 )
 
 var (
     conn *amqp.Connection
-    ch   *amqp.Channel
-    q    amqp.Queue
 )
 
 const rabbitMQURL = "amqp://guest:guest@localhost:5672/"
@@ -22,45 +23,83 @@ func failOnError(err error, msg string) {
 }
 
 func StartReceiving() {
-    var err error
-    conn, err = amqp.Dial(rabbitMQURL)
-    failOnError(err, "Failed to connect to RabbitMQ")
-    defer conn.Close()
+    QueueConn, err := amqp.Dial(rabbitMQURL)
+    failOnError(err, "Can't connect to AMQP")
+    defer QueueConn.Close()
 
-    ch, err = conn.Channel()
-    failOnError(err, "Failed to open a channel")
-    defer ch.Close()
+    amqpChannel, err := QueueConn.Channel()
+	failOnError(err, "Can't create a amqpChannel")
+	defer amqpChannel.Close()
 
-    q, err = ch.QueueDeclare(
-        "ficha_hotel-api", // name
-        true,              // durable
-        false,             // delete when unused
-        false,             // exclusive
-        false,             // no-wait
-        nil,               // arguments
-    )
-    failOnError(err, "Failed to declare a queue")
+    queue, err := amqpChannel.QueueDeclare("add", true, false, false, false, nil)
+	failOnError(err, "Could not declare `add` queue")
 
-    msgs, err := ch.Consume(
-        q.Name, // queue
-        "",     // consumer
-        true,   // auto-ack
-        false,  // exclusive
-        false,  // no-local
-        false,  // no-wait
-        nil,    // args
-    )
-    failOnError(err, "Failed to register a consumer")
+	err = amqpChannel.Qos(1, 0, false)
+	failOnError(err, "Could not configure QoS")
 
-    var forever chan struct{}
+    messageChannel, err := amqpChannel.Consume(
+		queue.Name,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	failOnError(err, "Could not register consumer")
+
+	stopChan := make(chan bool)
 
     go func() {
-        for d := range msgs {
-            log.Printf("Received a message: %s", d.Body)
-            controllers.GetOrInsertByID(string(d.Body))
-        }
-    }()
+		log.Printf("Consumer ready, PID: %d", os.Getpid())
+		for d := range messageChannel {
+			log.Printf("Received a message: %s", d.Body)
 
-    log.Printf("Subscription to the queue succeeded")
-    <-forever
+			var queueDto dtos.QueueDto
+
+			err := json.Unmarshal(d.Body, &queueDto)
+
+			if err != nil {
+				log.Printf("Error decoding JSON: %s", err)
+			}
+
+			log.Printf("ID %s, Action %s", queueDto.Id, queueDto.Action)
+
+			if err := d.Ack(false); err != nil {
+				log.Printf("Error acknowledging message : %s", err)
+			} else {
+				log.Printf("Acknowledged message")
+			}
+
+			if ( queueDto.Action == "INSERT" || queueDto.Action == "UPDATE" ) {
+
+				if (queueDto.Action == "UPDATE"){
+
+                    err := controllers.Delete(queueDto.Id)
+
+					if err != nil {
+						failOnError(err, "Error deleting from Solr")
+					}
+
+				}
+
+				err := controllers.AddFromId(queueDto.Id)
+
+				if err != nil {
+					failOnError(err, "Error inserting or deleting from Solr")
+				}
+
+			} else if queueDto.Action == "DELETE" {
+				err := controllers.Delete(queueDto.Id)
+
+				if err != nil {
+					failOnError(err, "Error inserting or deleting from Solr")
+				}
+			}
+
+		}
+	}()
+
+    // Stop for program termination
+	<-stopChan
 }

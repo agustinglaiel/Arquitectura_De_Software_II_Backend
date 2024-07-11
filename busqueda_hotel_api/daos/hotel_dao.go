@@ -1,17 +1,114 @@
 package daos
 
 import (
-	"busqueda_hotel_api/models"
-	"busqueda_hotel_api/utils/db"
+	"busqueda_hotel_api/config"
+	"busqueda_hotel_api/dtos"
+	"busqueda_hotel_api/utils/errors"
+
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
-	solr "github.com/rtt/Go-Solr"
+	logger "github.com/sirupsen/logrus"
+	"github.com/stevenferrer/solr-go"
 )
 
+type SolrClient struct{
+	Client *solr.JSONClient
+	Collection string
+}
+
+func (sc *SolrClient) GetQuery(query string, field string)(dtos.HotelsDTO, errors.ApiError){
+	var response dtos.SolrResponseDto
+	var hotelsDto dtos.HotelsDTO
+	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
+
+	if err != nil {
+		return hotelsDto, errors.NewBadRequestApiError("Error getting from solr")
+	}
+
+	defer q.Body.Close()
+	err = json.NewDecoder(q.Body).Decode(&response)
+	if err != nil {
+		log.Printf("Response Body: %s", q.Body)
+		log.Printf("Error: %s", err.Error())
+		return hotelsDto, errors.NewBadRequestApiError("Error in unmarshal")
+	}
+	hotelsDto = response.Response.Docs
+	log.Printf("Hotels: ", hotelsDto)
+	return hotelsDto, nil
+}
+
+func (sc *SolrClient) GetQueryAllFields(query string)(dtos.HotelsDTO, errors.ApiError){
+	var response dtos.SolrResponseDto
+	var hotelsDto dtos.HotelsDTO
+
+	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=*:*", config.SOLRHOST, config.SOLRPORT))
+	if err != nil {
+		return hotelsDto, errors.NewBadRequestApiError("error getting from solr")
+	}
+
+	var body []byte
+	body, err = io.ReadAll(q.Body)
+	if err != nil {
+		return hotelsDto, errors.NewBadRequestApiError("Error reading body")
+	}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return hotelsDto, errors.NewBadRequestApiError("Error in unmarshal")
+	}
+	hotelsDto = response.Response.Docs
+	return hotelsDto, nil
+}
+
+func(sc * SolrClient) Add(hotelDto dtos.HotelDTO) errors.ApiError{
+	var addHotelDto dtos.AddDto
+	addHotelDto.Add = dtos.DocDto{Doc: hotelDto}
+	data, err := json.Marshal(addHotelDto)
+
+	reader := bytes.NewReader(data)
+	if err != nil {
+		return errors.NewBadRequestApiError("Error getting json")
+	}
+	resp, err := sc.Client.Update(context.TODO(), sc.Collection, solr.JSON, reader)
+	logger.Debug(resp)
+	if err != nil {
+		return errors.NewBadRequestApiError("Error in solr")
+	}
+
+	er := sc.Client.Commit(context.TODO(), sc.Collection)
+	if er != nil {
+		logger.Debug("Error committing load")
+		return errors.NewInternalServerApiError("Error committing to solr", er)
+	}
+	return nil
+}
+
+func(sc *SolrClient) Delete(id string) errors.ApiError{
+	var deleteDto dtos.DeleteDto
+	deleteDto.Delete = dtos.DeleteDoc{Query: fmt.Sprintf("id:%s", id)}
+	data, err := json.Marshal(deleteDto)
+	reader := bytes.NewReader(data)
+	if err != nil {
+		return errors.NewBadRequestApiError("Error getting json")
+	}
+	resp, err := sc.Client.Update(context.TODO(), sc.Collection, solr.JSON, reader)
+	logger.Debug(resp)
+	if err != nil {
+		return errors.NewBadRequestApiError("Error in solr")
+	}
+	er := sc.Client.Commit(context.TODO(), sc.Collection)
+	if er != nil {
+		logger.Debug("Error committing load")
+		return errors.NewInternalServerApiError("Error committing to Solr", er)
+	}
+	return nil 
+}
+/*
 type HotelDao interface {
 	Get(id string) (*models.Hotel, error)
 	Create(hotel *models.Hotel) error
@@ -203,3 +300,4 @@ func getStringSliceFromInterface(i interface{}) []string {
 	}
 	return result
 }
+*/
