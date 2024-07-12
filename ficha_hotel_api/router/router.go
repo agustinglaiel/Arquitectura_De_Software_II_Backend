@@ -26,8 +26,8 @@ func MapUrls(router *gin.Engine) {
 	router.DELETE("/hotel/:id", controllers.DeleteHotelById)
 	router.GET("/hotels", controllers.GetHotels)
 
-	// Nuevas rutas para manejo de imágenes
-	router.POST("/hotel/:id/image", controllers.InsertImage) // Cambio :idHotel a :id para evitar conflicto
+	// Nuevas rutas para manejo de imágenesgo run main.go
+	router.POST("/hotel/:id/image", controllers.InsertImage)        // Cambio :idHotel a :id para evitar conflicto
 	router.GET("/hotel/:id/images", controllers.GetImagesByHotelId) // Cambio :idHotel a :id para evitar conflicto
 
 	fmt.Println("Finishing mappings configurations")
