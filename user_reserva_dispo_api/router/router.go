@@ -16,7 +16,7 @@ func MapUrls(router *gin.Engine) {
 
 	router.Use(cors.New(cors.Config{
 
-		AllowOrigins:     []string{"http://localhost:3000", "https://mydomain.com"}, // Cambia esto a los orígenes que necesitas permitir
+		AllowOrigins:     []string{"http://localhost:3000"}, // Cambia esto a los orígenes que necesitas permitir
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -40,7 +40,7 @@ func MapUrls(router *gin.Engine) {
 		routerAdmin.GET("/getUsers", controllers.GetUsers)            // Obtener todos los usuarios
 		routerAdmin.PUT("/updateUser/:id", controllers.UpdateUser)    // Actualizar usuario
 		routerAdmin.DELETE("/deleteUser/:id", controllers.DeleteUser) // Eliminar usuario
-		routerAdmin.HEAD("/")
+		routerAdmin.HEAD("/", auth.AdminTokenMiddleware())
 	}
 
 	fmt.Println("Finishing mappings configurations")
