@@ -20,17 +20,35 @@ var (
 	)
 )
 
-func GetQuery(c *gin.Context){
+func GetQuery(c *gin.Context) {
 	var hotelsDto dtos.HotelsDTO
 	query := c.Param("searchQuery")
 
 	hotelsDto, err := Solr.GetQuery(query)
-	if err != nil{
+	if err != nil {
 		c.JSON(http.StatusBadRequest, hotelsDto)
 		return
 	}
-	log.Debug(hotelsDto)
-	c.JSON(http.StatusOK, hotelsDto)
+	hotels2Dto := parseo(hotelsDto)
+	c.JSON(http.StatusOK, hotels2Dto)
+}
+
+func parseo(hotels dtos.HotelsDTO) dtos.Hotels2DTO {
+	var hotel2 dtos.Hotel2DTO
+	var hotels2 dtos.Hotels2DTO
+	for i := 0; i < len(hotels); i++ {
+		hotel2.ID = hotels[i].ID
+		hotel2.Amenities = hotels[i].Amenities
+		hotel2.City = hotels[i].City[0]
+		hotel2.AvailableRooms = hotels[i].AvailableRooms[0]
+		hotel2.Name = hotels[i].Name[0]
+		hotel2.Photos = hotels[i].Photos
+		hotel2.RoomCount = hotels[i].RoomCount[0]
+		hotel2.Description = hotels[i].Description[0]
+
+		hotels2 = append(hotels2, hotel2)
+	}
+	return hotels2
 }
 
 func GetQueryAllFields(c *gin.Context) {
@@ -48,7 +66,27 @@ func GetQueryAllFields(c *gin.Context) {
 	c.JSON(http.StatusOK, hotelsDto)
 }
 
-func AddFromId(id string) error {   // agregar e.NewBadResquest para manejar el error
+func GetCiudades(c *gin.Context) {
+	ciudades, err := Solr.GetCiudades()
+	if err != nil {
+		log.Debug(err)
+		c.JSON(http.StatusBadRequest, nil)
+		return
+	}
+	c.JSON(200, ciudades)
+}
+
+func GetHotelesByCiudad(c *gin.Context) {
+
+	hotels, err := Solr.GetHotelesByCiudad(c.Param("ciudad"))
+	if err != nil {
+		c.JSON(400, err)
+	}
+
+	c.JSON(200, hotels)
+}
+
+func AddFromId(id string) error { // agregar e.NewBadResquest para manejar el error
 	err := Solr.AddFromId(id)
 	if err != nil {
 		errors.NewBadRequestApiError("Error adding hotel to Solr")
@@ -67,7 +105,6 @@ func Delete(id string) error {
 	fmt.Println(http.StatusOK)
 	return nil
 }
-
 
 /*
 func GetOrInsertByID(id string) {

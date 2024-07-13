@@ -74,5 +74,5 @@ func CheckAvailability(hotelID string, startDate, endDate time.Time) (models.Res
 	if Db.Error != nil {
 		log.Fatal(Db.Error.Error())
 	}
-	return result, nil // Retorna true si no hay reservas que se superpongan
+	return result, nil
 }

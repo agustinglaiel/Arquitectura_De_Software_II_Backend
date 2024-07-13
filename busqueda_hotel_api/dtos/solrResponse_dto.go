@@ -1,7 +1,7 @@
 package dtos
 
 type ResponseDto struct {
-	NumFound int      `json:"numFound"`
+	NumFound int       `json:"numFound"`
 	Docs     HotelsDTO `json:"docs"`
 }
 

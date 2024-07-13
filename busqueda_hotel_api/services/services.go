@@ -27,7 +27,17 @@ func NewSolrServiceImpl(solr *client.SolrClient) *SolrService {
 		solr: solr,
 	}
 }
+func (s *SolrService) GetCiudades() ([]string, error) {
+	ciudades, err := s.solr.GetCiudades()
+	if err != nil {
+		return nil, err
+	}
+	return ciudades, nil
+}
 
+func (s *SolrService) GetHotelesByCiudad(ciudad string) (dtos.HotelsDTO, error) {
+	return nil, nil
+}
 func (s *SolrService) GetQuery(query string) (dtos.HotelsDTO, errors.ApiError) {
 	var hotelsDto dtos.HotelsDTO
 	queryParams := strings.Split(query, "_")
@@ -125,7 +135,7 @@ func (s *SolrService) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.Ap
 
 func (s *SolrService) AddFromId(id string) errors.ApiError {
 	var hotelDto dtos.HotelDTO
-	resp, err := http.Get(fmt.Sprintf("http://%s:%d/hotel/%s", config.HOTELSHOST, config.HOTELSPORT, id))
+	resp, err := http.Get(fmt.Sprintf("http://%s:%d/hotels-api/hotels/%s", config.HOTELSHOST, config.HOTELSPORT, id))
 
 	if err != nil {
 		log.Debugf("error getting item %s", id)

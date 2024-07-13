@@ -17,21 +17,60 @@ import (
 	"github.com/stevenferrer/solr-go"
 )
 
-type SolrClient struct{
-	Client *solr.JSONClient
+type SolrClient struct {
+	Client     *solr.JSONClient
 	Collection string
 }
 
-func (sc *SolrClient) GetQuery(query string, field string)(dtos.HotelsDTO, errors.ApiError){
+func (sc *SolrClient) GetCiudades() ([]string, error) {
+	// Realizar la solicitud HTTP a Solr
+	response, err := http.Get("http://localhost:8983/solr/hotels/select?facet=true&facet.field=city&q=*:*&rows=0&facet.limit=-1")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	// Verificar el estado de la respuesta
+	if response.StatusCode != http.StatusOK {
+		log.Fatalf("Error: estado de respuesta no válido. Código: %d", response.StatusCode)
+		return nil, err
+	}
+
+	// Decodificar la respuesta JSON en un mapa genérico
+	var result map[string]interface{}
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	// Acceder a los valores dentro del campo 'city'
+	facetFields := result["facet_counts"].(map[string]interface{})["facet_fields"].(map[string]interface{})
+	cityValues := facetFields["city"].([]interface{})
+
+	// Iterar sobre los valores de 'city' y sus recuentos
+	var cities []string
+	for i := 0; i < len(cityValues); i += 2 {
+		value := cityValues[i].(string) // Convertir a string
+		cities = append(cities, value)
+	}
+	return cities, nil
+}
+
+func (sc *SolrClient) GetHotelCiudad(ciudad string) {
+	log.Println(ciudad)
+}
+func (sc *SolrClient) GetQuery(query string, field string) (dtos.HotelsDTO, errors.ApiError) {
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
-	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
+	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotels/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
 
 	if err != nil {
 		return hotelsDto, errors.NewBadRequestApiError("Error getting from solr")
 	}
 
 	defer q.Body.Close()
+	println(q.Body)
 	err = json.NewDecoder(q.Body).Decode(&response)
 	if err != nil {
 		log.Printf("Response Body: %s", q.Body)
@@ -43,11 +82,11 @@ func (sc *SolrClient) GetQuery(query string, field string)(dtos.HotelsDTO, error
 	return hotelsDto, nil
 }
 
-func (sc *SolrClient) GetQueryAllFields(query string)(dtos.HotelsDTO, errors.ApiError){
+func (sc *SolrClient) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.ApiError) {
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
 
-	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=*:*", config.SOLRHOST, config.SOLRPORT))
+	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotel/select?q=*:*", config.SOLRHOST, config.SOLRPORT))
 	if err != nil {
 		return hotelsDto, errors.NewBadRequestApiError("error getting from solr")
 	}
@@ -65,7 +104,7 @@ func (sc *SolrClient) GetQueryAllFields(query string)(dtos.HotelsDTO, errors.Api
 	return hotelsDto, nil
 }
 
-func(sc * SolrClient) Add(hotelDto dtos.HotelDTO) errors.ApiError{
+func (sc *SolrClient) Add(hotelDto dtos.HotelDTO) errors.ApiError {
 	var addHotelDto dtos.AddDto
 	addHotelDto.Add = dtos.DocDto{Doc: hotelDto}
 	data, err := json.Marshal(addHotelDto)
@@ -88,7 +127,7 @@ func(sc * SolrClient) Add(hotelDto dtos.HotelDTO) errors.ApiError{
 	return nil
 }
 
-func(sc *SolrClient) Delete(id string) errors.ApiError{
+func (sc *SolrClient) Delete(id string) errors.ApiError {
 	var deleteDto dtos.DeleteDto
 	deleteDto.Delete = dtos.DeleteDoc{Query: fmt.Sprintf("id:%s", id)}
 	data, err := json.Marshal(deleteDto)
@@ -106,8 +145,9 @@ func(sc *SolrClient) Delete(id string) errors.ApiError{
 		logger.Debug("Error committing load")
 		return errors.NewInternalServerApiError("Error committing to Solr", er)
 	}
-	return nil 
+	return nil
 }
+
 /*
 type HotelDao interface {
 	Get(id string) (*models.Hotel, error)
