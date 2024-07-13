@@ -1,6 +1,7 @@
 package queue
 
 import (
+	config "busqueda_hotel_api/config"
 	"busqueda_hotel_api/controllers"
 	"busqueda_hotel_api/dtos"
 	"encoding/json"
@@ -11,34 +12,31 @@ import (
 )
 
 var (
-    conn *amqp.Connection
+	conn *amqp.Connection
 )
 
-const rabbitMQURL = "amqp://guest:guest@localhost:5672/"
+//const rabbitMQURL = "amqp://user:password@localhost:5672/"
 
 func failOnError(err error, msg string) {
-    if err != nil {
-        log.Panicf("%s: %s", msg, err)
-    }
+	if err != nil {
+		log.Panicf("%s: %s", msg, err)
+	}
 }
 
 func StartReceiving() {
-    QueueConn, err := amqp.Dial(rabbitMQURL)
-    failOnError(err, "Can't connect to AMQP")
-    defer QueueConn.Close()
+	QueueConn, err := amqp.Dial(config.AMPQConnectionURL)
+	failOnError(err, "Can't connect to AMQP")
+	defer QueueConn.Close()
 
-    amqpChannel, err := QueueConn.Channel()
+	amqpChannel, err := QueueConn.Channel()
 	failOnError(err, "Can't create a amqpChannel")
 	defer amqpChannel.Close()
-
-    queue, err := amqpChannel.QueueDeclare("add", true, false, false, false, nil)
-	failOnError(err, "Could not declare `add` queue")
 
 	err = amqpChannel.Qos(1, 0, false)
 	failOnError(err, "Could not configure QoS")
 
-    messageChannel, err := amqpChannel.Consume(
-		queue.Name,
+	messageChannel, err := amqpChannel.Consume(
+		config.QUEUENAME,
 		"",
 		false,
 		false,
@@ -46,15 +44,16 @@ func StartReceiving() {
 		false,
 		nil,
 	)
+
 	failOnError(err, "Could not register consumer")
 
 	stopChan := make(chan bool)
 
-    go func() {
+	go func() {
 		log.Printf("Consumer ready, PID: %d", os.Getpid())
 		for d := range messageChannel {
 			log.Printf("Received a message: %s", d.Body)
-
+			log.Println(d)
 			var queueDto dtos.QueueDto
 
 			err := json.Unmarshal(d.Body, &queueDto)
@@ -71,11 +70,11 @@ func StartReceiving() {
 				log.Printf("Acknowledged message")
 			}
 
-			if ( queueDto.Action == "INSERT" || queueDto.Action == "UPDATE" ) {
+			if queueDto.Action == "INSERT" || queueDto.Action == "UPDATE" {
 
-				if (queueDto.Action == "UPDATE"){
+				if queueDto.Action == "UPDATE" {
 
-                    err := controllers.Delete(queueDto.Id)
+					err := controllers.Delete(queueDto.Id)
 
 					if err != nil {
 						failOnError(err, "Error deleting from Solr")
@@ -100,6 +99,6 @@ func StartReceiving() {
 		}
 	}()
 
-    // Stop for program termination
+	// Stop for program termination
 	<-stopChan
 }
