@@ -53,7 +53,7 @@ func StartReceiving() {
 		log.Printf("Consumer ready, PID: %d", os.Getpid())
 		for d := range messageChannel {
 			log.Printf("Received a message: %s", d.Body)
-			log.Println(d)
+
 			var queueDto dtos.QueueDto
 
 			err := json.Unmarshal(d.Body, &queueDto)

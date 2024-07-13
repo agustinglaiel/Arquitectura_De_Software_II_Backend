@@ -24,7 +24,7 @@ var (
 	HotelService HotelServiceInterface
 )
 
-func init(){
+func init() {
 	HotelService = &hotelService{}
 }
 
@@ -67,7 +67,7 @@ func (s *hotelService) InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, error
 
 	hotelDto.ID = hotel.ID.Hex()
 
-	queue.Send(hotelDto.ID)
+	queue.Send(hotelDto.ID, "INSERT")
 
 	return hotelDto, nil
 }
@@ -90,7 +90,7 @@ func (s *hotelService) UpdateHotelById(id string, hotelDto dtos.HotelDto) (dtos.
 	dao.UpdateHotel(hotel)
 	hotelDto.ID = hotel.ID.Hex()
 
-	queue.Send(hotelDto.ID)
+	queue.Send(hotelDto.ID, "UPDATE")
 
 	return hotelDto, nil
 }
@@ -104,9 +104,9 @@ func (s *hotelService) GetHotels() ([]dtos.HotelDto, errors.ApiError) {
 	var hotelDtos []dtos.HotelDto
 	for _, hotel := range hotels {
 		hotelDto := dtos.HotelDto{
-			ID:             hotel.ID.Hex(),
-			Name:           hotel.Name,
-			Description:    hotel.Description,
+			ID:          hotel.ID.Hex(),
+			Name:        hotel.Name,
+			Description: hotel.Description,
 			//Photos:         hotel.Photos,
 			Amenities:      hotel.Amenities,
 			RoomCount:      hotel.RoomCount,

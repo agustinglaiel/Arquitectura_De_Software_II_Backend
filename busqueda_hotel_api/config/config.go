@@ -5,11 +5,11 @@ import (
 )
 
 var (
-	SOLRHOST       = "solr"
+	SOLRHOST       = "localhost"
 	SOLRPORT       = 8983
-	SOLRCOLLECTION = "hotel"
+	SOLRCOLLECTION = "hotels"
 
-	HOTELSHOST = "hotels-api"
+	HOTELSHOST = "localhost"
 	HOTELSPORT = 8080
 
 	QUEUENAME = "ficha_hotel-api"

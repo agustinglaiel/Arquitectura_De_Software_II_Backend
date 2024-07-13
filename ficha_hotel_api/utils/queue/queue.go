@@ -2,6 +2,8 @@ package queue
 
 import (
 	"context"
+	"encoding/json"
+	"ficha_hotel_api/dtos"
 	"log"
 	"os"
 	"time"
@@ -45,27 +47,40 @@ func Init() {
 	failOnError(err, "Failed to declare a queue")
 }
 
-func Send(message string) {
+func Send(id string, action string) {
 	if ch == nil {
 		log.Println("Channel is not initialized")
 		return
 	}
 
+	// Prepare a message in the same format as the consumer expects
+	queueDto := dtos.QueueDto{
+		Id:     id,
+		Action: action,
+	}
+
+	body, err := json.Marshal(queueDto)
+	if err != nil {
+		log.Fatalf("Error encoding JSON: %s", err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := ch.PublishWithContext(ctx,
+	err = ch.PublishWithContext(ctx,
 		"",     // exchange
 		q.Name, // routing key
 		false,  // mandatory
 		false,  // immediate
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(message),
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "application/json", // Change content type to JSON
+			Body:         body,
 		})
+
 	if err != nil {
-		log.Printf("Failed to publish a message: %v", err)
+		log.Fatalf("Failed to publish a message: %v", err)
 	} else {
-		log.Printf(" [x] Sent %s\n", message)
+		log.Printf(" [x] Sent message: ID %s, Action %s\n", id, action)
 	}
 }

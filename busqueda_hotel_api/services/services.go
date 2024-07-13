@@ -28,7 +28,7 @@ func NewSolrServiceImpl(solr *client.SolrClient) *SolrService {
 	}
 }
 
-func (s * SolrService) GetQuery(query string)(dtos.HotelsDTO, errors.ApiError){
+func (s *SolrService) GetQuery(query string) (dtos.HotelsDTO, errors.ApiError) {
 	var hotelsDto dtos.HotelsDTO
 	queryParams := strings.Split(query, "_")
 	numParams := len(queryParams)
@@ -40,14 +40,14 @@ func (s * SolrService) GetQuery(query string)(dtos.HotelsDTO, errors.ApiError){
 		return hotelsDto, errors.NewBadRequestApiError("Solr failed")
 	}
 
-	if numParams == 4{
-	
+	if numParams == 4 {
+
 		startdateQuery, enddateQuery := queryParams[2], queryParams[3]
 		startdateSplit := strings.Split(startdateQuery, "-")
 		enddateSplit := strings.Split(enddateQuery, "-")
 		startdate := fmt.Sprintf("%s%s%s", startdateSplit[0], startdateSplit[1], startdateSplit[2])
 		enddate := fmt.Sprintf("%s%s%s", enddateSplit[0], enddateSplit[1], enddateSplit[2])
-	
+
 		sDate, _ := strconv.Atoi(startdate)
 		eDate, _ := strconv.Atoi(enddate)
 
@@ -61,7 +61,7 @@ func (s * SolrService) GetQuery(query string)(dtos.HotelsDTO, errors.ApiError){
 
 		for _, hotel = range hotelsDto {
 			wg.Add(1)
-			go func(hotel dtos.HotelDTO){
+			go func(hotel dtos.HotelDTO) {
 				defer wg.Done()
 				result, err := s.GetHotelInfo(hotel.ID, sDate, eDate)
 				if err != nil {
@@ -72,7 +72,7 @@ func (s * SolrService) GetQuery(query string)(dtos.HotelsDTO, errors.ApiError){
 				log.Debug(result)
 				log.Debug(response)
 
-				if result == true{
+				if result == true {
 					response = hotel
 					resultChan <- response
 				}
@@ -85,7 +85,7 @@ func (s * SolrService) GetQuery(query string)(dtos.HotelsDTO, errors.ApiError){
 			close(resultChan)
 		}()
 
-		for response := range resultChan{
+		for response := range resultChan {
 			hotelResults = append(hotelResults, response)
 		}
 
@@ -95,7 +95,7 @@ func (s * SolrService) GetQuery(query string)(dtos.HotelsDTO, errors.ApiError){
 	return hotelsDto, nil
 }
 
-func (s *SolrService) GetHotelInfo(id string, startdate int, enddate int)(bool, error){
+func (s *SolrService) GetHotelInfo(id string, startdate int, enddate int) (bool, error) {
 	resp, err := http.Get(fmt.Sprintf("http://%s:%d/user-res-api/hotel/availability/%s/%d/%d", config.USERAPIHOST, config.USERAPIPORT, id, startdate, enddate))
 	if err != nil {
 		return false, errors.NewBadRequestApiError("user_reserva_disp_api failed")
@@ -113,7 +113,7 @@ func (s *SolrService) GetHotelInfo(id string, startdate int, enddate int)(bool, 
 	return status, nil
 }
 
-func (s *SolrService) GetQueryAllFields(query string)(dtos.HotelsDTO, errors.ApiError){
+func (s *SolrService) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.ApiError) {
 	var hotelsDto dtos.HotelsDTO
 	hotelsDto, err := s.solr.GetQueryAllFields(query)
 	if err != nil {
@@ -123,9 +123,9 @@ func (s *SolrService) GetQueryAllFields(query string)(dtos.HotelsDTO, errors.Api
 	return hotelsDto, nil
 }
 
-func (s *SolrService) AddFromId(id string) errors.ApiError{
+func (s *SolrService) AddFromId(id string) errors.ApiError {
 	var hotelDto dtos.HotelDTO
-	resp, err := http.Get(fmt.Sprintf("http://%s:%d/hotels-api/hotels/%s", config.HOTELSHOST, config.HOTELSPORT, id))
+	resp, err := http.Get(fmt.Sprintf("http://%s:%d/hotel/%s", config.HOTELSHOST, config.HOTELSPORT, id))
 
 	if err != nil {
 		log.Debugf("error getting item %s", id)
@@ -159,7 +159,6 @@ func (s *SolrService) Delete(id string) errors.ApiError {
 	}
 	return nil
 }
-
 
 /*type hotelService struct {
 	dao daos.HotelDao
