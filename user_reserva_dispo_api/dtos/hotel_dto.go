@@ -9,4 +9,5 @@ type HotelDto struct {
 	RoomCount      int      `json:"room_count"`
 	City           string   `json:"city"`
 	AvailableRooms int      `json:"available_rooms"`
+	IdAmadeus        string `json:"id_amadeus"`
 }
