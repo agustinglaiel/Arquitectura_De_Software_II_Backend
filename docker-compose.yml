@@ -64,6 +64,26 @@ services:
     networks:
       - backend
 
+  user_reserva_dispo_api:
+    build: user_reserva_dispo_api
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=tpintegrador
+      - DB_PASS=tpintegrador
+      - DB_NAME=tpintegrador
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user_reserva_dispo_api.rule=Host(`localhost`) && PathPrefix(`/user_reserva_dispo_api`)"
+      - "traefik.http.services.user_reserva_dispo_api.loadbalancer.server.port=8060"
+    depends_on:
+      - memcached
+      - mysql
+    ports:
+      - "8060:8060"
+    networks:
+      - backend
+
   mongo:
     image: mongo:4.4
     restart: always
@@ -74,17 +94,10 @@ services:
     ports:
       - "27017:27017"
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mongo",
-          "localhost:27017",
-          "--eval",
-          "db.runCommand({ ping: 1 })",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 30
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - backend
 
@@ -120,8 +133,53 @@ services:
     networks:
       - backend
 
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tpintegrador
+      MYSQL_USER: tpintegrador
+      MYSQL_PASSWORD: tpintegrador
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VIRTUAL_HOST: localhost
+    depends_on:
+      - user_reserva_dispo_api
+      - ficha_hotel_api
+      - busqueda_hotel_api
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+
+  containers-api:
+    build: containers-api
+    environment:
+      VIRTUAL_HOST: localhost
+    ports:
+      - "8040:8040"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - backend
+
 networks:
   backend:
 
 volumes:
   mongo_data:
+  mysql_data:

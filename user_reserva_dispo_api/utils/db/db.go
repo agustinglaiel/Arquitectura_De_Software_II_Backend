@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"os"
 
 	reservaDao "user_reserva_dispo_api/daos"
 	userDao "user_reserva_dispo_api/daos"
@@ -20,11 +21,11 @@ var (
 // InitDB inicializa la conexión a la base de datos.
 func InitDB() error {
 	// Parámetros de conexión a la base de datos
-	DBName := "tpintegrador"
-	DBUser := "tpintegrador"
-	DBPass := "tpintegrador"
-	DBHost := "localhost" // Cambia a la IP correcta si es necesario
-	DBPort := "3307"      // Puerto mapeado del contenedor MySQL en el host
+	DBHost := os.Getenv("DB_HOST")
+	DBPort := os.Getenv("DB_PORT")
+	DBUser := os.Getenv("DB_USER")
+	DBPass := os.Getenv("DB_PASS")
+	DBName := os.Getenv("DB_NAME")
 
 	// Formatea la cadena de conexión
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", DBUser, DBPass, DBHost, DBPort, DBName)
