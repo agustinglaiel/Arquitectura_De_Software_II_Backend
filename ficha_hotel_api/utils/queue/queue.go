@@ -25,7 +25,7 @@ func failOnError(err error, msg string) {
 
 func Init() {
 	var err error
-	rabbitMQURL := os.Getenv("localhost:5672")
+	rabbitMQURL := os.Getenv("rabbitmq:5672")
 	if rabbitMQURL == "" {
 		rabbitMQURL = "amqp://guest:guest@localhost:5672/"
 	}

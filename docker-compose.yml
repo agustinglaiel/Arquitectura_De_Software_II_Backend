@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  api:
+    build: ./ficha_hotel_api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - rabbitmq
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+    networks:
+      - backend
+
+  mongo:
+    image: mongo
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    networks:
+      - backend
+
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8090:8080" # Cambiado para evitar conflicto con el puerto 8080 de la API
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  mongo_data:
