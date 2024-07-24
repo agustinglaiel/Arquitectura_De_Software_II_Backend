@@ -1,11 +1,15 @@
 package services
 
 import (
+	"bytes"
+	"encoding/json"
 	dao "ficha_hotel_api/daos"
 	"ficha_hotel_api/dtos"
 	"ficha_hotel_api/models"
 	"ficha_hotel_api/utils/errors"
 	"ficha_hotel_api/utils/queue"
+	"fmt"
+	"net/http"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -68,6 +72,24 @@ func (s *hotelService) InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, error
 	hotelDto.ID = hotel.ID.Hex()
 
 	queue.Send(hotelDto.ID, "INSERT")
+	url := "http://localhost:8060/insertHotel"
+	jsonData, err := json.Marshal(hotelDto)
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error making request:", err)
+	}
+	defer resp.Body.Close()
 
 	return hotelDto, nil
 }

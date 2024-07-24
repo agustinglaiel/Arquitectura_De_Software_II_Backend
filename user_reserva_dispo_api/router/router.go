@@ -33,7 +33,8 @@ func MapUrls(router *gin.Engine) {
 	router.POST("/register", controllers.RegisterUser) // Registro de usuarios
 	router.POST("/login", controllers.LoginUser)       // Login de usuarios
 	router.DELETE("/:id", controllers.DeleteUser)
-
+	router.GET("/test", controllers.Test)
+	router.POST("/insertHotel", controllers.InsertHotel)
 	///////////Admin Rutas///////////////
 	{
 		routerAdmin.GET("/getUserById/:id", controllers.GetUserById)  // Obtener usuario por ID

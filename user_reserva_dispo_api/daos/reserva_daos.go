@@ -3,8 +3,11 @@ package daos
 import (
 	"log"
 	"time"
+	"user_reserva_dispo_api/dtos"
 	"user_reserva_dispo_api/models"
 	"user_reserva_dispo_api/utils/errors"
+
+	"github.com/jinzhu/gorm"
 )
 
 //var Db *gormDB TENEMOS QUE VER EL ERROR ESTE @JULI JAJJA
@@ -75,4 +78,39 @@ func CheckAvailability(hotelID string, startDate, endDate time.Time) (models.Res
 		log.Fatal(Db.Error.Error())
 	}
 	return result, nil
+}
+
+func CheckHotelExists(hotelID string) (bool, error) {
+	var hotel models.Hotel
+	result := Db.Where("id_amadeus = ?", hotelID).First(&hotel)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return false, nil // El hotel no existe
+		}
+		return false, result.Error // Error en la consulta
+	}
+	return true, nil // El hotel existe
+}
+
+func InsertHotel(hotel dtos.HotelDto) (models.Hotel, error) {
+	var mHotel models.Hotel
+	mHotel.IdMongo = hotel.ID
+	mHotel.IdAmadeus = hotel.IdAmadeus
+
+	result := Db.Create(&mHotel)
+	if result.Error != nil {
+		return models.Hotel{}, errors.NewInternalServerApiError("Failed to create Hotel", result.Error)
+	}
+	return mHotel, nil
+}
+
+func GetHotelById(id string) (models.Hotel, error) {
+
+	var hotel models.Hotel
+	result := Db.First(&hotel, hotel.IdMongo)
+	if result.Error != nil {
+		return models.Hotel{}, result.Error
+	}
+	return hotel, nil
 }

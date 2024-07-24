@@ -21,13 +21,16 @@ type reservaServiceInterface interface {
 	ParseDate(dateString string) (time.Time, errors.ApiError)
 	ComprobaDispReserva(reservationDto dtos.ReservationAvailabilityDto) errors.ApiError
 	PostReserva(reservationDto dtos.CreateReservationDto) (dtos.CreateReservationDto, errors.ApiError)
+	InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, error)
 	GetAmadeustoken() string
+	AvailabilityAmadeus(startdateconguiones string, enddateconguiones string, idAm string) bool
 }
 
 var (
 	ReservaService reservaServiceInterface
 )
 var layout = "02-01-2006"
+var layoutAmadeus = "2006-01-02"
 
 func init() {
 	ReservaService = &reservaService{}
@@ -60,7 +63,16 @@ func (s *reservaService) ComprobaDispReserva(reservationDto dtos.ReservationAvai
 		listaDias = append(listaDias, i)
 	}
 
-	return comprobar(reservas, hotel.RoomCount, listaDias)
+	h, er := daos.GetHotelById(reservationDto.HotelID)
+	if er != nil {
+		return errors.NewBadRequestApiError(er.Error())
+	}
+	if s.AvailabilityAmadeus(reservationDto.StartDate.Format(layoutAmadeus), reservationDto.EndDate.Format(layoutAmadeus), h.IdAmadeus) {
+
+		return comprobar(reservas, hotel.RoomCount, listaDias)
+	}
+	return errors.NewBadRequestApiError("No hay disponibilidad en esa fecha")
+
 }
 
 func (s *reservaService) PostReserva(reservationDto dtos.CreateReservationDto) (dtos.CreateReservationDto, errors.ApiError) {
@@ -135,13 +147,11 @@ func GetHotelById(id string) (dtos.HotelDto, errors.ApiError) {
 	}
 
 	return hotel, nil
-
 }
 
 // funcion para generar un token de amadeus cada vez que voy a hacer la consulta
 func (s *reservaService) GetAmadeustoken() string {
 
-	fmt.Printf("entro al f d token")
 	// Define los datos que deseas enviar en el cuerpo de la solicitud.
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
@@ -198,7 +208,138 @@ func (s *reservaService) GetAmadeustoken() string {
 	if !ok {
 		return ""
 	}
-	fmt.Println("token:", token)
 	return token
+}
 
+func (s *reservaService) InsertHotel(hotelDto dtos.HotelDto) (dtos.HotelDto, error) {
+
+	apiUrl := "https://test.api.amadeus.com/v1/reference-data/locations/hotels/by-city?cityCode=MIA&radius=5&radiusUnit=KM&hotelSource=ALL"
+	// Crear una solicitud HTTP GET
+	solicitud, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		fmt.Println("Error al crear la solicitud dentro de insert hotel:", err)
+		return hotelDto, err
+	}
+
+	token := s.GetAmadeustoken()
+	solicitud.Header.Set("Authorization", "Bearer "+token)
+
+	// Realiza la solicitud HTTP
+	cliente := &http.Client{}
+
+	respuesta, err := cliente.Do(solicitud)
+	if err != nil {
+		fmt.Println("Error al realizar la solicitud:", err)
+		return hotelDto, err
+
+	}
+
+	defer respuesta.Body.Close()
+
+	// Leer y manejar la respuesta de la API externa
+	var response struct {
+		Data []struct {
+			HotelID string `json:"hotelId"`
+		} `json:"data"`
+	}
+
+	// Decodificar la respuesta JSON
+	decoder := json.NewDecoder(respuesta.Body)
+	if err := decoder.Decode(&response); err != nil {
+		return hotelDto, err
+
+	}
+	log.Println(response)
+	for _, hotel := range response.Data {
+		fmt.Printf("Id amadeus: %s\n", hotel.HotelID)
+		hotelM, err := daos.CheckHotelExists(hotel.HotelID)
+		if err != nil {
+			fmt.Println(err)
+			return hotelDto, err
+		} else if !hotelM {
+			hotelDto.IdAmadeus = hotel.HotelID
+			_, er := daos.InsertHotel(hotelDto)
+			// Error del Insert
+			if er != nil {
+				return hotelDto, er
+			}
+
+			break // Se encontró el ID, sal del bucle
+		}
+	}
+
+	return hotelDto, nil
+
+}
+
+func (s *reservaService) AvailabilityAmadeus(startdateconguiones string, enddateconguiones string, idAm string) bool {
+	fmt.Println("entro a availability")
+	apiUrl := "https://test.api.amadeus.com/v3/shopping/hotel-offers"
+	apiUrl += "?hotelIds=HHMIA500"
+
+	apiUrl += "&checkInDate=" + startdateconguiones
+	apiUrl += "&checkOutDate=" + enddateconguiones
+
+	fmt.Println(apiUrl)
+
+	// Crear una solicitud HTTP
+	solicitud, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		fmt.Println("ERROR CREANDO SOLICITUD:", err)
+		return false
+	}
+
+	// Agregar el encabezado de autorización Bearer con tu token
+	token := s.GetAmadeustoken()
+	solicitud.Header.Set("Authorization", "Bearer "+token)
+
+	fmt.Println(solicitud)
+
+	cliente := &http.Client{}
+
+	respuesta, err := cliente.Do(solicitud)
+
+	if err != nil {
+		fmt.Println("Error al realizar la solicitud:", err)
+		return false
+	}
+
+	// Verifica el código de estado de la respuesta
+	if respuesta.StatusCode != http.StatusOK {
+		//fmt.Printf("La solicitud a la API de Amadeus no fue exitosa. Código de estado: %d\n", respuesta)
+		return true
+	}
+	defer respuesta.Body.Close() // Mover defer aquí para cerrar el cuerpo correctamente
+
+	// Lee el cuerpo de la respuesta
+	responseBody, err := ioutil.ReadAll(respuesta.Body)
+	if err != nil {
+		fmt.Println("Error al leer la respuesta:", err)
+		return false
+	}
+
+	// Crear una estructura para deserializar el JSON de la respuesta
+	var responseStruct struct {
+		Data []struct {
+			Type                   string `json:"type"`
+			ID                     string `json:"id"`
+			ProviderConfirmationID string `json:"providerConfirmationId"`
+		} `json:"data"`
+	}
+
+	// Decodificar el JSON y extraer el campo "id"
+	if err := json.Unmarshal(responseBody, &responseStruct); err != nil {
+		fmt.Println("Error al decodificar el JSON de la respuesta:", err)
+		return false
+	}
+
+	// Obtén el ID del hotel del primer elemento en "data"
+	if len(responseStruct.Data) > 0 {
+		// si el largo de la respuesta es mayor q cero es pq hay disponibilidad --> llamo al service
+		fmt.Println("Amadeus nos dice que hay disponibilidad")
+		return true
+	}
+
+	fmt.Println("No hay disponibilidad en esas fechas")
+	return false
 }

@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"net/http"
 	"strconv"
 	"user_reserva_dispo_api/dtos"
 	"user_reserva_dispo_api/services"
 	"user_reserva_dispo_api/utils/errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 func ComprobaDispReserva(c *gin.Context) {
@@ -17,11 +19,12 @@ func ComprobaDispReserva(c *gin.Context) {
 	if err != nil {
 		c.JSON(400, err)
 	}
-	avalabilityReservationDto.StartDate, err = services.ReservaService.ParseDate(c.Param("EndDate"))
+	avalabilityReservationDto.EndDate, err = services.ReservaService.ParseDate(c.Param("EndDate"))
 	if err != nil {
 		c.JSON(400, err)
 	}
 	avalabilityReservationDto.HotelID = c.Param("HotelID")
+
 	if avalabilityReservationDto.HotelID == "" {
 		c.JSON(400, err)
 	}
@@ -60,5 +63,30 @@ func PostReserva(c *gin.Context) {
 	avalabilityReservationDto.UserID = userId
 
 	services.ReservaService.PostReserva(avalabilityReservationDto)
+}
+
+func Test(c *gin.Context) {
+	// Crear una solicitud HTTP GET
+	c.JSON(200, services.ReservaService.GetAmadeustoken())
+}
+func InsertHotel(c *gin.Context) {
+	var HotelDto dtos.HotelDto
+	err := c.BindJSON(&HotelDto)
+
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	HotelDto, err = services.ReservaService.InsertHotel(HotelDto)
+
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	c.JSON(200, HotelDto)
 
 }
