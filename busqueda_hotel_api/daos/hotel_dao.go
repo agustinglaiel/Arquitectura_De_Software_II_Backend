@@ -24,16 +24,16 @@ type SolrClient struct {
 
 func (sc *SolrClient) GetCiudades() ([]string, error) {
 	// Realizar la solicitud HTTP a Solr
-	response, err := http.Get("http://localhost:8983/solr/hotels/select?facet=true&facet.field=city&q=*:*&rows=0&facet.limit=-1")
+	response, err := http.Get("http://solr:8983/solr/hotelSearch/select?facet=true&facet.field=city&q=*:*&rows=0&facet.limit=-1")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 	defer response.Body.Close()
-
+	log.Println("ESTOY ACA")
 	// Verificar el estado de la respuesta
 	if response.StatusCode != http.StatusOK {
-		log.Fatalf("Error: estado de respuesta no válido. Código: %d", response.StatusCode)
+		log.Println("Error: estado de respuesta no válido. Código: %d", response.StatusCode)
 		return nil, err
 	}
 
@@ -63,8 +63,8 @@ func (sc *SolrClient) GetHotelCiudad(ciudad string) {
 func (sc *SolrClient) GetQuery(query string, field string) (dtos.HotelsDTO, errors.ApiError) {
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
-	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotels/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
-	log.Println(fmt.Sprintf("http://%s:%d/solr/hotels/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
+	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
+	log.Println(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
 	if err != nil {
 		return hotelsDto, errors.NewBadRequestApiError("Error getting from solr")
 	}
@@ -85,7 +85,7 @@ func (sc *SolrClient) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.Ap
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
 
-	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotel/select?q=*:*", config.SOLRHOST, config.SOLRPORT))
+	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=*:*", config.SOLRHOST, config.SOLRPORT))
 	if err != nil {
 		return hotelsDto, errors.NewBadRequestApiError("error getting from solr")
 	}
@@ -112,6 +112,7 @@ func (sc *SolrClient) Add(hotelDto dtos.Hotel2DTO) errors.ApiError {
 	if err != nil {
 		return errors.NewBadRequestApiError("Error getting json")
 	}
+	log.Println(sc.Collection)
 	resp, err := sc.Client.Update(context.TODO(), sc.Collection, solr.JSON, reader)
 	logger.Debug(resp)
 	if err != nil {
@@ -134,6 +135,11 @@ func (sc *SolrClient) Delete(id string) errors.ApiError {
 	if err != nil {
 		return errors.NewBadRequestApiError("Error getting json")
 	}
+	log.Println("MIRA ACA")
+	log.Println(sc.Collection)
+	log.Println("MIRA ACA")
+	
+
 	resp, err := sc.Client.Update(context.TODO(), sc.Collection, solr.JSON, reader)
 	logger.Debug(resp)
 	if err != nil {

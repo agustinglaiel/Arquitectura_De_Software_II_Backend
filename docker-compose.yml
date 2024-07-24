@@ -6,8 +6,6 @@ services:
     image: solr
     ports:
       - "8983:8983"
-    volumes:
-      - ./configs/solr/managed-schema:/opt/solr/server/solr/configsets/_default/conf/managed-schema
     entrypoint:
       - docker-entrypoint.sh
       - solr-precreate
@@ -56,9 +54,12 @@ services:
       - "traefik.http.routers.busqueda_hotel_api.rule=Host(`localhost`) && PathPrefix(`/busqueda_hotel_api`)"
       - "traefik.http.services.busqueda_hotel_api.loadbalancer.server.port=8070"
     depends_on:
-      - solr
-      - memcached
-      - rabbit
+      solr:
+        condition: service_started
+      memcached:
+        condition: service_started
+      rabbit:
+        condition: service_healthy
     ports:
       - "8070:8070"
     networks:

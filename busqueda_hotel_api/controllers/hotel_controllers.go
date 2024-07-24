@@ -67,6 +67,7 @@ func GetQueryAllFields(c *gin.Context) {
 }
 
 func GetCiudades(c *gin.Context) {
+	println("Estoy en get ciudades")
 	ciudades, err := Solr.GetCiudades()
 	if err != nil {
 		log.Debug(err)

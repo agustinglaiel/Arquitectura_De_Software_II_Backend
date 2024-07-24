@@ -141,13 +141,13 @@ func (s *SolrService) AddFromId(id string) errors.ApiError {
 		log.Debugf("error getting item %s", id)
 		return errors.NewBadRequestApiError("error getting hotel " + id)
 	}
-
+	log.Println("144")
 	var body []byte
 	body, err = io.ReadAll(resp.Body)
-
 	err = json.Unmarshal(body, &hotelDto)
 
 	if err != nil {
+		log.Println("151")
 		log.Debugf("error in unmarshal of hotel %s", id)
 		return errors.NewBadRequestApiError("error in unmarshal of hotel")
 	}
@@ -155,6 +155,8 @@ func (s *SolrService) AddFromId(id string) errors.ApiError {
 	er := s.solr.Add(hotelDto)
 	log.Debug(hotelDto)
 	if er != nil {
+		log.Println("158")
+
 		log.Debugf("error adding to solr")
 		return errors.NewInternalServerApiError("Adding to Solr error", err)
 	}
