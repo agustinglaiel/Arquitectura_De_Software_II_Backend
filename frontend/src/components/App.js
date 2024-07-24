@@ -12,6 +12,7 @@ import Hotel from './Hotel';
 import Cookies from 'js-cookie';
 //import jsonServerProvider from 'ra-data-json-server';
 import Admin from './Admin';
+import AdminInfra from './AdminInfra';
 import CreateHotel from './CreateHotel';
 import AddImages from './AddImages';
 import Landing from './Landing';
@@ -97,6 +98,7 @@ function App() {
             <Route path="/login" element={<LogIn onLogin={handleLogin} />} />
             <Route path="/reserva" element={<Reservation />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin-infra" element={<AdminInfra />} />
             <Route path="/admin/crearHotel" element={<CreateHotel />} />
             <Route path="/admin/crearHotel/imagenes" element={<AddImages/>}/>
             <Route path="/hotel/:id" element={<Hotel/>}/>
