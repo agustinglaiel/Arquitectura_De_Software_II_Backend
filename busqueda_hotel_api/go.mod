@@ -3,7 +3,7 @@ module busqueda_hotel_api
 go 1.20
 
 require (
-	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
+	github.com/allegro/bigcache v1.2.1
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/json-iterator/go v1.1.12

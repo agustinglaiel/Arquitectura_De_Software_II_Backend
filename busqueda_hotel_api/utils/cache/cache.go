@@ -1,33 +1,43 @@
-package cache
+package utils
 
 import (
-	"fmt"
+	"time"
 
-	"github.com/bradfitz/gomemcache/memcache"
+	"log"
+
+	"github.com/allegro/bigcache"
 )
 
-var (
-	cacheClient *memcache.Client
-)
+var cache *bigcache.BigCache
 
-func InitCache() {
-	cacheClient = memcache.New("memcached:11211")
+func InitCache(cacheDuration time.Duration) {
+    var err error
+    cache, err = bigcache.NewBigCache(bigcache.Config{
+        Shards:             1024,           // Número de shards (particiones), aumenta para mejorar la concurrencia
+        LifeWindow:         cacheDuration,  // Tiempo de vida de cada clave en la caché
+        CleanWindow:        5 * time.Minute, // Intervalo de limpieza de claves expiradas
+        MaxEntriesInWindow: 1000 * 10 * 60,  // Máximo número de entradas en la ventana de vida
+        MaxEntrySize:       500,            // Máximo tamaño en bytes de cada entrada
+        Verbose:            true,           // Modo verbose para mostrar información adicional
+    })
+
+    if err != nil {
+        log.Fatalf("Failed to initialize cache: %v", err)
+    }
 }
 
-func Get(key string) []byte {
-	item, err := cacheClient.Get(key)
-	if err != nil {
-		fmt.Println("Error getting item from cache", err)
-		return nil
-	}
-	return item.Value
+func Set(key string, entry []byte) error {
+    return cache.Set(key, entry)
 }
 
-func Set(key string, value []byte) {
-	if err := cacheClient.Set(&memcache.Item{
-		Key:   key,
-		Value: value,
-	}); err != nil {
-		fmt.Println("Error setting item in cache", err)
-	}
+func Get(key string) ([]byte, error) {
+    return cache.Get(key)
+}
+
+func Delete(key string) error {
+    return cache.Delete(key)
+}
+
+func Reset() {
+    cache.Reset() // Limpia toda la caché
 }

@@ -1,29 +1,35 @@
 package cache
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/bradfitz/gomemcache/memcache"
+	log "github.com/sirupsen/logrus"
 )
 
 var cacheClient *memcache.Client
 
 func Init_cache() {
-	cacheClient = memcache.New("localhost:11211")
+	cacheClient = memcache.New("cache:11211") // Asegúrate de que la dirección IP y el puerto son correctos
+	fmt.Println("Initialized cache", cacheClient)
+	log.Info("Initialized cache")
 }
 
-func Set(key string, value []byte) {
-	if err := cacheClient.Set(&memcache.Item{Key: key, Value: value}); err != nil {
-		fmt.Println("Error setting item in cache", err)
+// SetCache sets a value with a specific key in Memcached.
+func SetCache(key string, value interface{}, ttl int32) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
 	}
+	return cacheClient.Set(&memcache.Item{Key: key, Value: data, Expiration: ttl})
 }
 
-func Get(key string) []byte {
+// GetCache retrieves a value based on a key from Memcached.
+func GetCache(key string, v interface{}) error {
 	item, err := cacheClient.Get(key)
 	if err != nil {
-		fmt.Println("Error getting item from cache", err)
-		return nil
+		return err
 	}
-
-	return item.Value
+	return json.Unmarshal(item.Value, v)
 }
