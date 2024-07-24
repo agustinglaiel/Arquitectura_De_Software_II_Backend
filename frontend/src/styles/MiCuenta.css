@@ -1,0 +1,32 @@
+  h1 {
+    font-size: 30px;
+    margin-bottom: 20px;
+  }
+  
+  .user-details {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  .user-image {
+    flex: 0 0 300px;
+  }
+  
+  .user-info {
+    flex-grow: 1;
+    margin-left: 20px;
+  }
+  
+  .user-info-line {
+    font-size: 19px;
+  }
+  
+  .label {
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  .value {
+    font-weight: normal;
+  }
