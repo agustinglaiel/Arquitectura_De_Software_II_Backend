@@ -1,0 +1,23 @@
+.container {
+  margin-top: 80px;
+}
+
+.navbar {
+  margin-bottom: 20px;
+}
+
+.carousel-image {
+  object-fit: cover;
+  height: 400px;
+}
+
+.footer {
+  background-color: #f8f9fa;
+  padding: 20px 0;
+}
+
+@media (max-width: 767px) {
+  .navbar .ml-auto {
+    display: none;
+  }
+}
