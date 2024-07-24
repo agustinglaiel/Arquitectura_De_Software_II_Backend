@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	SOLRHOST       = "localhost"
+	SOLRHOST       = "solr"
 	SOLRPORT       = 8983
 	SOLRCOLLECTION = "hotels"
 
@@ -18,9 +18,9 @@ var (
 	LBHOST = "lbbusqueda"
 	LBPORT = 80
 
-	RABBITUSER     = "user"
-	RABBITPASSWORD = "password"
-	RABBITHOST     = "localhost"
+	RABBITUSER     = "guest"
+	RABBITPASSWORD = "guest"
+	RABBITHOST     = "rabbit"
 	RABBITPORT     = 5672
 
 	AMPQConnectionURL = fmt.Sprintf("amqp://%s:%s@%s:%d/", RABBITUSER, RABBITPASSWORD, RABBITHOST, RABBITPORT)

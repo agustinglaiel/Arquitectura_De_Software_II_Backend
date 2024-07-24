@@ -1,6 +1,38 @@
 version: "3.8"
 
 services:
+  solr:
+    container_name: solr
+    image: solr
+    ports:
+      - "8983:8983"
+    volumes:
+      - ./configs/solr/managed-schema:/opt/solr/server/solr/configsets/_default/conf/managed-schema
+    entrypoint:
+      - docker-entrypoint.sh
+      - solr-precreate
+      - hotelSearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+
+  memcached:
+    container_name: cache
+    image: memcached:1.6.16
+    ports:
+      - "11211:11211"
+    healthcheck:
+      test: ["CMD", "memcached-tool", "127.0.0.1:11211", "stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - backend
+
   ficha_hotel_api:
     build: ./ficha_hotel_api
     labels:
@@ -13,12 +45,27 @@ services:
       rabbit:
         condition: service_started
     ports:
-      - "8080"
+      - "8080:8080"
+    networks:
+      - backend
+
+  busqueda_hotel_api:
+    build: ./busqueda_hotel_api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.busqueda_hotel_api.rule=Host(`localhost`) && PathPrefix(`/busqueda_hotel_api`)"
+      - "traefik.http.services.busqueda_hotel_api.loadbalancer.server.port=8070"
+    depends_on:
+      - solr
+      - memcached
+      - rabbit
+    ports:
+      - "8070:8070"
     networks:
       - backend
 
   mongo:
-    image: mongo
+    image: mongo:4.4
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
