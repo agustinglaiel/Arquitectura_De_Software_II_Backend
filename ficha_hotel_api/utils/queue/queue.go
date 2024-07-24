@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"ficha_hotel_api/dtos"
 	"log"
-	"os"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -25,10 +24,11 @@ func failOnError(err error, msg string) {
 
 func Init() {
 	var err error
-	rabbitMQURL := os.Getenv("rabbitmq:5672")
+	rabbitMQURL := "amqp://guest:guest@rabbit:5672/"
+	/*rabbitMQURL := os.Getenv("RABBITMQ_URL")
 	if rabbitMQURL == "" {
-		rabbitMQURL = "amqp://guest:guest@localhost:5672/"
-	}
+		rabbitMQURL = "amqp://guest:guest@rabbit:5672/"
+	}*/
 
 	conn, err = amqp.Dial(rabbitMQURL)
 	failOnError(err, "Failed to connect to RabbitMQ")

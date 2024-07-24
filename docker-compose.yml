@@ -1,30 +1,121 @@
 version: "3.8"
 
 services:
-  api:
-    build: ./ficha_hotel_api
+  solr:
+    container_name: solr
+    image: solr
     ports:
-      - "8080:8080"
-    depends_on:
-      - mongo
-      - rabbitmq
-      - traefik
+      - "8983:8983"
+    entrypoint:
+      - docker-entrypoint.sh
+      - solr-precreate
+      - hotelSearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+
+  memcached:
+    container_name: cache
+    image: memcached:1.6.16
+    ports:
+      - "11211:11211"
+    healthcheck:
+      test: ["CMD", "memcached-tool", "127.0.0.1:11211", "stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - backend
+
+  ficha_hotel_api:
+    build: ./ficha_hotel_api
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.ficha_hotel_api.rule=Host(`localhost`) && PathPrefix(`/ficha_hotel_api`)"
       - "traefik.http.services.api.loadbalancer.server.port=8080"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbit:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+
+  busqueda_hotel_api:
+    build: ./busqueda_hotel_api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.busqueda_hotel_api.rule=Host(`localhost`) && PathPrefix(`/busqueda_hotel_api`)"
+      - "traefik.http.services.busqueda_hotel_api.loadbalancer.server.port=8070"
+    depends_on:
+      solr:
+        condition: service_started
+      memcached:
+        condition: service_started
+      rabbit:
+        condition: service_healthy
+    ports:
+      - "8070:8070"
+    networks:
+      - backend
+
+  user_reserva_dispo_api:
+    build: user_reserva_dispo_api
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=tpintegrador
+      - DB_PASS=tpintegrador
+      - DB_NAME=tpintegrador
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user_reserva_dispo_api.rule=Host(`localhost`) && PathPrefix(`/user_reserva_dispo_api`)"
+      - "traefik.http.services.user_reserva_dispo_api.loadbalancer.server.port=8060"
+    depends_on:
+      - memcached
+      - mysql
+    ports:
+      - "8060:8060"
     networks:
       - backend
 
   mongo:
-    image: mongo
-    volumes:
-      - mongo_data:/data/db
+    image: mongo:4.4
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: arqui_de_software_2
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - backend
 
-  rabbitmq:
+  rabbit:
+    container_name: rabbit
     image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 1s
+      timeout: 5s
+      retries: 30
     networks:
       - backend
 
@@ -43,8 +134,53 @@ services:
     networks:
       - backend
 
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tpintegrador
+      MYSQL_USER: tpintegrador
+      MYSQL_PASSWORD: tpintegrador
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VIRTUAL_HOST: localhost
+    depends_on:
+      - user_reserva_dispo_api
+      - ficha_hotel_api
+      - busqueda_hotel_api
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+
+  containers-api:
+    build: containers-api
+    environment:
+      VIRTUAL_HOST: localhost
+    ports:
+      - "8040:8040"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - backend
+
 networks:
   backend:
 
 volumes:
   mongo_data:
+  mysql_data:

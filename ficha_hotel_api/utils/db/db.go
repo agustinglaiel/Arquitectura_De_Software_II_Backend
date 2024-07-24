@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,12 +13,12 @@ var MongoDb *mongo.Database
 var client *mongo.Client
 
 func InitDB() error {
-	uri := os.Getenv("localhost:27017")
+	/*uri := os.Getenv("localhost:27017")
 	if uri == "" {
-		uri = "mongodb://root:root@localhost:27017"
-	}
+		uri = "mongodb://root:root@mongo:27017"
+	}*/
 
-	clientOpts := options.Client().ApplyURI(uri)
+	clientOpts := options.Client().ApplyURI("mongodb://root:root@mongo:27017")
 	cli, err := mongo.Connect(context.TODO(), clientOpts)
 	client = cli
 	if err != nil {
