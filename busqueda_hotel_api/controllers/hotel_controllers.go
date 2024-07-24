@@ -88,6 +88,7 @@ func GetHotelesByCiudad(c *gin.Context) {
 
 func AddFromId(id string) error { // agregar e.NewBadResquest para manejar el error
 	err := Solr.AddFromId(id)
+
 	if err != nil {
 		errors.NewBadRequestApiError("Error adding hotel to Solr")
 		return err

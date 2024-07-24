@@ -10,7 +10,7 @@ type SolrResponseDto struct {
 }
 
 type DocDto struct {
-	Doc HotelDTO `json:"doc"`
+	Doc Hotel2DTO `json:"doc"`
 }
 
 type AddDto struct {

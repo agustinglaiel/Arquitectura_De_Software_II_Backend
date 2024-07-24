@@ -64,7 +64,7 @@ func (sc *SolrClient) GetQuery(query string, field string) (dtos.HotelsDTO, erro
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
 	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotels/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
-
+	log.Println(fmt.Sprintf("http://%s:%d/solr/hotels/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
 	if err != nil {
 		return hotelsDto, errors.NewBadRequestApiError("Error getting from solr")
 	}
@@ -81,7 +81,6 @@ func (sc *SolrClient) GetQuery(query string, field string) (dtos.HotelsDTO, erro
 	log.Printf("Hotels: ", hotelsDto)
 	return hotelsDto, nil
 }
-
 func (sc *SolrClient) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.ApiError) {
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
@@ -104,7 +103,7 @@ func (sc *SolrClient) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.Ap
 	return hotelsDto, nil
 }
 
-func (sc *SolrClient) Add(hotelDto dtos.HotelDTO) errors.ApiError {
+func (sc *SolrClient) Add(hotelDto dtos.Hotel2DTO) errors.ApiError {
 	var addHotelDto dtos.AddDto
 	addHotelDto.Add = dtos.DocDto{Doc: hotelDto}
 	data, err := json.Marshal(addHotelDto)

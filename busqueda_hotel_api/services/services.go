@@ -134,8 +134,8 @@ func (s *SolrService) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.Ap
 }
 
 func (s *SolrService) AddFromId(id string) errors.ApiError {
-	var hotelDto dtos.HotelDTO
-	resp, err := http.Get(fmt.Sprintf("http://%s:%d/hotels-api/hotels/%s", config.HOTELSHOST, config.HOTELSPORT, id))
+	var hotelDto dtos.Hotel2DTO
+	resp, err := http.Get(fmt.Sprintf("http://%s:%d/hotel/%s", config.HOTELSHOST, config.HOTELSPORT, id))
 
 	if err != nil {
 		log.Debugf("error getting item %s", id)
@@ -143,10 +143,10 @@ func (s *SolrService) AddFromId(id string) errors.ApiError {
 	}
 
 	var body []byte
-	body, _ = io.ReadAll(resp.Body)
-	log.Debugf("%s", body)
+	body, err = io.ReadAll(resp.Body)
+
 	err = json.Unmarshal(body, &hotelDto)
-	log.Debugf("Unmarshal result: %s", &hotelDto)
+
 	if err != nil {
 		log.Debugf("error in unmarshal of hotel %s", id)
 		return errors.NewBadRequestApiError("error in unmarshal of hotel")

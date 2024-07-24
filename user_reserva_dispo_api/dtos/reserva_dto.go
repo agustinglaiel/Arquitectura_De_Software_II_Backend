@@ -17,10 +17,11 @@ type ReservationsDto []ReservationDto
 
 // CreateReservationDto se utiliza para la creación de reservas.
 type CreateReservationDto struct {
-	UserID    int       `json:"user_id"`
-	HotelID   string    `json:"hotel_id"`
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
+	ReservationID int       `json:"reservation_id"`
+	UserID        int       `json:"user_id"`
+	HotelID       string    `json:"hotel_id"`
+	StartDate     time.Time `json:"start_date"`
+	EndDate       time.Time `json:"end_date"`
 }
 
 // UpdateReservationDto se utiliza para actualizar una reserva existente.

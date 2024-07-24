@@ -43,5 +43,11 @@ func MapUrls(router *gin.Engine) {
 		routerAdmin.HEAD("/", auth.AdminTokenMiddleware())
 	}
 
+	/////////////User Rutas////////////
+	{
+		routerUsuario.POST("reserva/:StartDate/:EndDate/:HotelID", controllers.PostReserva)
+
+	}
+
 	fmt.Println("Finishing mappings configurations")
 }
