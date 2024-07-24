@@ -94,7 +94,7 @@ function HotelDetail() {
         <Col md={6}>
           {hotel ? (
             <>
-              <h1>Maldron {hotel.name}</h1>
+              <h1>{hotel.name}</h1>
               <p>{hotel.description}</p>
             </>
           ) : (
@@ -153,9 +153,6 @@ function HotelDetail() {
                 <p>Fecha final: {finalDate}</p>
               </Col>
 
-              <Col md={4} className="text-center align-self-center">
-                <p>Habitación: {tipoHabitacion}</p>
-              </Col>
 
               <Col md={4} className="d-flex justify-content-end align-self-center">
                 <p> </p>

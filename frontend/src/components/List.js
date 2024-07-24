@@ -30,7 +30,7 @@ function List() {
             if(response3.status()!=200){
               continue
             }
-            agregarHotel(hotel) ///ACA CHATGPT
+            agregarHotel(hotel) 
           }catch{ 
           }  
         }
@@ -39,11 +39,10 @@ function List() {
         promises.push(
           getImagesByHotelId(hotel.id)
            .then((response2) => {
-              const imagesData = response2.data.images[0].Data;
-              const imageData = new Uint8Array(atob(imagesData).split('').map(char => char.charCodeAt(0)));
-              hotel.image = imageData;
-              return imageData;
-           })
+            const imagesData = response2.data.images[0].Data;
+            hotel.image=new Uint8Array(atob(imagesData).split('').map(char => char.charCodeAt(0)));
+            return new Uint8Array(atob(imagesData).split('').map(char => char.charCodeAt(0)));
+          })
              .catch((error) => {
              console.error('Error al obtener imágenes por hotel:', error);
               return null; // O maneja el error de alguna manera
@@ -52,6 +51,7 @@ function List() {
       }
 
       const imagesArray = await Promise.all(promises);
+      console.log(imagesArray);
       setImagenes(imagesArray.filter(image => image !== null));
       setHoteles(hotelsData);
     }
@@ -69,6 +69,7 @@ function List() {
   const handleReservar = (hotelId) => {
     navigate(`/hotel/${hotelId}/${startDate}/${finalDate}`);
   };
+
   return (
     <Container className="mt-5">
       <h2 style={{ marginBottom: 35 }}>Resultado</h2>

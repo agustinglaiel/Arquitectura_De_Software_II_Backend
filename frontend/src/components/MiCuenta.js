@@ -1,28 +1,10 @@
-import React, { useState, useEffect } from 'react';
 import '../styles/MiCuenta.css';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
-import { getReservationsByUser, getImagesByHotelId } from './api';
 
 const MiCuenta = () => {
   const userData = Cookies.get('userData');
-  const [reservas, setReservas] = useState([]);
-
-  const getReservas = async () => {
-    const response = await getReservationsByUser();
-    const reservasData = response.data.reservations;
-    setReservas(reservasData);
-    console.log(response);
-  };
-
-  
-
   const navigate = useNavigate();
-
-  useEffect(() => {
-    getReservas();
-    console.log(reservas)
-  }, []); // La dependencia vacía asegura que estos efectos solo se ejecuten una vez al montar el componente.
 
   if (!userData) {
     navigate('/');
@@ -67,31 +49,7 @@ const MiCuenta = () => {
         </div>
         
       </div>
-      <div className="table-container" >
-          <table>
-            <thead>
-              <tr>
-                <th>Id de reserva</th>
-                <th>Hotel</th>
-                <th>Fecha</th>
-                <th>Habitación</th>
-              </tr>
-            </thead>
-            <tbody>
 
-              {reservas.map((reserva) => (
-                <tr key={reserva.reservation_id}>
-                  <td>{reserva.reservation_id}</td>
-                  <td>{reserva.hotel_name}</td>
-                  <td>
-                    {reserva.initial_date} - {reserva.final_date}
-                  </td>
-                  <td>{reserva.habitacion}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
     </div>
   );
 };
