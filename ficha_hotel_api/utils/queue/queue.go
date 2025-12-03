@@ -24,6 +24,8 @@ func failOnError(err error, msg string) {
 
 func Init() {
 	var err error
+	var err2 error
+	
 	rabbitMQURL := "amqp://guest:guest@rabbit:5672/"
 	/*rabbitMQURL := os.Getenv("RABBITMQ_URL")
 	if rabbitMQURL == "" {
@@ -31,7 +33,15 @@ func Init() {
 	}*/
 
 	conn, err = amqp.Dial(rabbitMQURL)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	if err!=nil{
+		log.Println("configuracion de docker no existente, Probando configuracion local")
+		rabbitMQURL2 := "amqp://guest:guest@localhost:5672/"
+		conn, err2 = amqp.Dial(rabbitMQURL2)
+		if err2 != nil{
+			log.Println("Error en local:",err2)
+			failOnError(err, "Failed to connect to RabbitMQ Dokcer")
+		}
+	}
 
 	ch, err = conn.Channel()
 	failOnError(err, "Failed to open a channel")

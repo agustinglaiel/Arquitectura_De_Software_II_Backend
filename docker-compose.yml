@@ -184,3 +184,11 @@ networks:
 volumes:
   mongo_data:
   mysql_data:
+
+
+
+#docker run --name mysql  -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=tpintegrador -e MYSQL_USER=tpintegrador -e MYSQL_PASSWORD=tpintegrador -p 3307:3306 -d mysql:8.0
+#docker run --name mongo -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=root -e MONGO_INITDB_DATABASE=arqui_de_software_2 -p 27017:27017 -d mongo:4.4
+#docker run --name rabbit -e RABBITMQ_DEFAULT_USER=guest -e RABBITMQ_DEFAULT_PASS=guest -p 5672:5672 -p 15672:15672 -d rabbitmq:3-management
+#docker run --name solr -p 8983:8983 -d solr:8.11 solr-precreate hotelSearch
+#docker run --name cache -p 11211:11211 -d memcached:1.6.16

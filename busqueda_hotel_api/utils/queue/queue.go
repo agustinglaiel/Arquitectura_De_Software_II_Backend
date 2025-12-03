@@ -25,7 +25,11 @@ func failOnError(err error, msg string) {
 
 func StartReceiving() {
 	QueueConn, err := amqp.Dial(config.AMPQConnectionURL)
-	failOnError(err, "Can't connect to AMQP")
+		if err!=nil{
+			QueueConn, err = amqp.Dial(config.AMPQConnectionURLlocal)
+			failOnError(err, "Can't connect to AMQP")
+		}
+
 	defer QueueConn.Close()
 
 	amqpChannel, err := QueueConn.Channel()

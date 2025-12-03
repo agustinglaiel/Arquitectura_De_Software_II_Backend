@@ -11,10 +11,6 @@ import (
 
 func main() {
 	// Initialize the Solr connection
-	/*err := db.InitDB()
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-	}*/
 
 	// Initialize the RabbitMQ consumer
 	go queue.StartReceiving()

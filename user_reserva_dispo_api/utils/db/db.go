@@ -16,6 +16,7 @@ import (
 var (
 	db  *gorm.DB
 	err error
+	err2 error
 )
 
 // InitDB inicializa la conexión a la base de datos.
@@ -32,9 +33,15 @@ func InitDB() error {
 
 	// Abre la conexión a la base de datos
 	db, err = gorm.Open("mysql", dsn)
+	
 	if err != nil {
-		log.Fatalf("Error al abrir la conexión a la base de datos: %v", err)
-		return err
+		dsn := fmt.Sprintf("tpintegrador:tpintegrador@tcp(127.0.0.1:3307)/tpintegrador?charset=utf8&parseTime=True&loc=Local")
+		db, err2 = gorm.Open("mysql", dsn)
+		if err2!=nil{
+			log.Fatalf("Error al abrir la conexión a la base de datos: %v", err2)
+			log.Fatalf("Error al abrir la conexión a la base de datos: %v", err)
+			return err
+		}
 	}
 
 	log.Println("Conexión establecida correctamente")

@@ -1,10 +1,9 @@
 package daos
 
 import (
-	"busqueda_hotel_api/config"
 	"busqueda_hotel_api/dtos"
 	"busqueda_hotel_api/utils/errors"
-
+	"strings"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -22,9 +21,17 @@ type SolrClient struct {
 	Collection string
 }
 
+var host string
 func (sc *SolrClient) GetCiudades() ([]string, error) {
 	// Realizar la solicitud HTTP a Solr
-	response, err := http.Get("http://solr:8983/solr/hotelSearch/select?facet=true&facet.field=city&q=*:*&rows=0&facet.limit=-1")
+	if host=="" {
+		urlString := fmt.Sprintf("%v", sc.Client)
+		host,_ = estractBaseURL(urlString)
+		log.Println(host)
+
+	}
+	
+	response, err := http.Get(fmt.Sprintf("%s/solr/hotelSearch/select?facet=true&facet.field=city&q=*:*&rows=0&facet.limit=-1",host))
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -63,8 +70,14 @@ func (sc *SolrClient) GetHotelCiudad(ciudad string) {
 func (sc *SolrClient) GetQuery(query string, field string) (dtos.HotelsDTO, errors.ApiError) {
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
-	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
-	log.Println(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=%s%s%s", config.SOLRHOST, config.SOLRPORT, field, "%3A", query))
+	if host=="" {
+		urlString := fmt.Sprintf("%v", sc.Client)
+		host,_ = estractBaseURL(urlString)
+		log.Println(host)
+
+	}
+	log.Println(fmt.Sprintf("%s/solr/hotelSearch/select?q=%s%s%s", host, field, "%3A", query))
+	q, err := http.Get(fmt.Sprintf("%s/solr/hotelSearch/select?q=%s%s%s", host, field, "%3A", query))
 	if err != nil {
 		return hotelsDto, errors.NewBadRequestApiError("Error getting from solr")
 	}
@@ -85,7 +98,7 @@ func (sc *SolrClient) GetQueryAllFields(query string) (dtos.HotelsDTO, errors.Ap
 	var response dtos.SolrResponseDto
 	var hotelsDto dtos.HotelsDTO
 
-	q, err := http.Get(fmt.Sprintf("http://%s:%d/solr/hotelSearch/select?q=*:*", config.SOLRHOST, config.SOLRPORT))
+	q, err := http.Get(fmt.Sprintf("%s/solr/hotelSearch/select?q=*:*", host))
 	if err != nil {
 		return hotelsDto, errors.NewBadRequestApiError("error getting from solr")
 	}
@@ -151,6 +164,30 @@ func (sc *SolrClient) Delete(id string) errors.ApiError {
 		return errors.NewInternalServerApiError("Error committing to Solr", er)
 	}
 	return nil
+}
+
+
+func estractBaseURL(clientString string) (string, error) {
+	// 1. Encontrar el inicio de la URL (después de "&{")
+	log.Println("Consiguiendo HOST")
+	start := strings.Index(clientString, "{")
+	if start == -1 {
+		return "", fmt.Errorf("formato de cliente no reconocido: falta '{'")
+	}
+	
+	// El inicio real es el carácter después de '{'
+	start = start + 1 
+
+	// 2. Encontrar el final de la URL (antes del primer espacio después del inicio)
+	end := strings.Index(clientString[start:], " ")
+	if end == -1 {
+		return "", fmt.Errorf("formato de cliente no reconocido: falta espacio delimitador")
+	}
+
+	// 3. Devolver la subcadena
+	// clientString[start:] es la cadena desde el inicio: "http://localhost:8983 0xc00039d940}"
+	// clientString[start : start+end] es la URL limpia
+	return clientString[start : start+end], nil
 }
 
 /*

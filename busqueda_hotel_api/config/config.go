@@ -24,7 +24,7 @@ var (
 	RABBITPORT     = 5672
 
 	AMPQConnectionURL = fmt.Sprintf("amqp://%s:%s@%s:%d/", RABBITUSER, RABBITPASSWORD, RABBITHOST, RABBITPORT)
-
+	AMPQConnectionURLlocal = fmt.Sprintf("amqp://%s:%s@%s:%d/", RABBITUSER, RABBITPASSWORD, "localhost", RABBITPORT)
 	USERAPIHOST = "user_reserva_dispo_api"
 	USERAPIPORT = 8060
 )

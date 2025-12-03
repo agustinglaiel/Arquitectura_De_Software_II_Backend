@@ -17,6 +17,7 @@ import (
 var (
 	Solr = services.NewSolrServiceImpl(
 		(*client.SolrClient)(con.NewSolrClient(config.SOLRHOST, config.SOLRPORT, config.SOLRCOLLECTION)),
+		
 	)
 )
 
@@ -67,7 +68,7 @@ func GetQueryAllFields(c *gin.Context) {
 }
 
 func GetCiudades(c *gin.Context) {
-	println("Estoy en get ciudades")
+	println(Solr)
 	ciudades, err := Solr.GetCiudades()
 	if err != nil {
 		log.Debug(err)

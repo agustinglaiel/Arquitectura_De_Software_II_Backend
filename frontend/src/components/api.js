@@ -145,7 +145,7 @@ export const agregarReservation = async (
   }
   try {
     const response = await axios.post(
-      `${URL_API_USER}/usuario/agregarReservation/${idHotel}/${inicio}/${final}/${habitacion}`
+      `${URL_API_USER}/usuario/reserva/${inicio}/${final}/${idHotel}`
     );
     return response;
   } catch (error) {
